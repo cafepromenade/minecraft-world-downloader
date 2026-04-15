@@ -238,5 +238,12 @@
             <classifier>mac</classifier>
         </dependency>
     </dependencies>
+         <distributionManagement>
+    <repository>
+        <id>github</id>
+        <name>GitHub Packages</name>
+        <url>https://maven.pkg.github.com/CafePromenade/minecraft-world-downloader</url>
+    </repository>
+</distributionManagement>
 </project>
 
