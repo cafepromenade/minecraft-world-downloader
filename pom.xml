@@ -6,7 +6,7 @@
 
     <groupId>mircokroon.minecraft-world-downloader</groupId>
     <artifactId>minecraft-world-downloader</artifactId>
-    <version>1.0.0-${project.build.timestamp}</version>
+    <version>2.3</version>
     <packaging>jar</packaging>
     <properties>
         <java.version>21</java.version>
