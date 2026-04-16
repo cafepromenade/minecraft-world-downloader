@@ -58,8 +58,10 @@ public class MicrosoftAuthHandler {
     }
 
     private boolean expiresSoon(LocalDateTime time) {
-    return time == null || time.minusMinutes(5).isBefore(LocalDateTime.now());
-}
+        return time == null
+            || LocalDateTime.MIN.equals(time)
+            || time.isBefore(LocalDateTime.now().plusMinutes(5));
+    }
 
     private void refresh() {
         if (microsoftAccessToken == null || expiresSoon(microsoftExpiration)) {
