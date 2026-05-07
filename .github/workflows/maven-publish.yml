@@ -1,11 +1,12 @@
-name: Build and Attach JAR to Release
+name: Build and Publish JAR Release
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,9 +23,12 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
 
-      - name: Upload JAR to release
+      - name: Create release and upload JAR
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           files: target/world-downloader.jar
         env:
           GITHUB_TOKEN: ${{ github.token }}
