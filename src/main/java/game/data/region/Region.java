@@ -132,8 +132,6 @@ public class Region {
                     return;
                 }
 
-                chunk.setSaved(true);
-
                 // get the chunk in binary format and get its coordinates as an Mca compatible integer. Then add
                 // these to the map of chunk binaries.
                 ChunkBinary binary = ChunkBinary.fromChunk(chunk);
@@ -150,7 +148,16 @@ public class Region {
                 if (entityBinary != null) {
                     chunkEntityBinaryMap.put(pos, entityBinary);
                 }
+
+                if (binary != null || entityBinary != null) {
+                    chunk.setSaved(true);
+                }
             } catch (Exception e) {
+                // keep the chunk unsaved so we can retry saving it later instead of silently losing updates.
+                Chunk chunk = chunks.get(coordinate);
+                if (chunk != null) {
+                    chunk.setSaved(false);
+                }
                 e.printStackTrace();
             }
         });
