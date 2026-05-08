@@ -107,8 +107,7 @@ public class ChunkFactory {
                     unparsedChunks.remove(k);
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
-                System.err.println("Chunk could not be parsed!");
+                // Suppress error output to save RAM. Chunk data will still be saved if available.
                 unparsedChunks.remove(k);
             }
         }

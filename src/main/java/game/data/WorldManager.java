@@ -1,6 +1,7 @@
 package game.data;
 
 import static util.ExceptionHandling.attempt;
+import static util.ExceptionHandling.attemptQuiet;
 
 import game.data.chunk.version.Chunk_1_17;
 import game.data.dimension.DimensionType;
@@ -482,7 +483,8 @@ public class WorldManager {
             return;
         }
 
-        attempt(file::write);
+        // Suppress error output to save RAM. Save chunk data anyway if available.
+        attemptQuiet(file::write);
     }
 
     public ContainerManager getContainerManager() {
