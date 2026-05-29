@@ -40,6 +40,9 @@ public abstract class Chunk extends ChunkEntities {
     private ChunkImageFactory imageFactory;
 
     public ChunkHeightHandler getChunkHeightHandler() {
+        if (chunkHeightHandler == null) {
+            chunkHeightHandler = new ChunkHeightHandler(this);
+        }
         return chunkHeightHandler;
     }
 
@@ -485,7 +488,7 @@ public abstract class Chunk extends ChunkEntities {
 
     public ChunkImageFactory getChunkImageFactory() {
         if (imageFactory == null) {
-            chunkHeightHandler = new ChunkHeightHandler(this);
+            getChunkHeightHandler();
 
             // assignment should happen before running initialisation code
             imageFactory = new ChunkImageFactory(this);
@@ -552,8 +555,8 @@ public abstract class Chunk extends ChunkEntities {
 
             updateBlock(blockPos, blockId, true);
         }
-        boolean wasChanged = this.chunkHeightHandler.recomputeHeights(toUpdate);
-        if (wasChanged) {
+        boolean wasChanged = getChunkHeightHandler().recomputeHeights(toUpdate);
+        if (wasChanged && imageFactory != null) {
             imageFactory.generateImages();
         }
     }
