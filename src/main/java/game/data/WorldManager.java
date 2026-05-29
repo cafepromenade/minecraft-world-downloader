@@ -425,7 +425,17 @@ public class WorldManager {
     public void start() {
         ThreadFactory namedThreadFactory = r -> new Thread(r, "World Save Service");
         saveService = Executors.newScheduledThreadPool(1, namedThreadFactory);
-        saveService.scheduleWithFixedDelay(() -> attempt(this::save), INIT_SAVE_DELAY, SAVE_DELAY, TimeUnit.MILLISECONDS);
+        // Catch Throwable (not just Exception): scheduleWithFixedDelay permanently cancels all future
+        // executions if the task throws anything, which would silently stop periodic saving for the rest
+        // of the session. Swallow-and-log so the saver keeps running every cycle.
+        saveService.scheduleWithFixedDelay(() -> {
+            try {
+                save();
+            } catch (Throwable t) {
+                System.err.println("Periodic save failed; will retry next cycle:");
+                t.printStackTrace();
+            }
+        }, INIT_SAVE_DELAY, SAVE_DELAY, TimeUnit.MILLISECONDS);
     }
 
     private void save(Dimension dimension, Map<CoordinateDim2D, Region> regions) {
@@ -444,28 +454,32 @@ public class WorldManager {
         }
         savingDimension.add(dimension);
 
-        // save level.dat
-        attempt(levelData::save);
-        attempt(mapRegistry::save);
+        try {
+            // save level.dat
+            attempt(levelData::save);
+            attempt(mapRegistry::save);
 
-        if (!regions.isEmpty()) {
-            // convert the values to an array first to prevent blocking any threads
-            Region[] r = regions.values().toArray(new Region[0]);
-            for (Region region : r) {
-                McaFilePair files = region.toFile(getPlayerPosition().globalToChunk());
-                if (files == null) {
-                    continue;
+            if (!regions.isEmpty()) {
+                // convert the values to an array first to prevent blocking any threads
+                Region[] r = regions.values().toArray(new Region[0]);
+                for (Region region : r) {
+                    McaFilePair files = region.toFile(getPlayerPosition().globalToChunk());
+                    if (files == null) {
+                        continue;
+                    }
+
+                    write(files.getRegion());
+                    write(files.getEntities());
                 }
-
-                write(files.getRegion());
-                write(files.getEntities());
             }
+
+            // remove empty regions
+            regions.entrySet().removeIf(el -> el.getValue().isEmpty());
+        } finally {
+            // always release the lock, otherwise a single failed save would permanently block this
+            // dimension from ever saving again ("already being saved").
+            savingDimension.remove(dimension);
         }
-
-        // remove empty regions
-        regions.entrySet().removeIf(el -> el.getValue().isEmpty());
-
-        savingDimension.remove(dimension);
 
         // suggest GC to clear up some memory that may have been freed by saving
         System.gc();
