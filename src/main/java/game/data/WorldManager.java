@@ -483,7 +483,7 @@ public class WorldManager {
             return;
         }
 
-        // Suppress error output to save RAM. Save chunk data anyway if available.
+        // Log any write error (see attemptQuiet) but keep saving other chunk data.
         attemptQuiet(file::write);
     }
 
