@@ -39,14 +39,14 @@ public abstract class Chunk extends ChunkEntities {
     private boolean saved;
     private ChunkImageFactory imageFactory;
 
-    public ChunkHeightHandler getChunkHeightHandler() {
+    public synchronized ChunkHeightHandler getChunkHeightHandler() {
         if (chunkHeightHandler == null) {
             chunkHeightHandler = new ChunkHeightHandler(this);
         }
         return chunkHeightHandler;
     }
 
-    private ChunkHeightHandler chunkHeightHandler;
+    private volatile ChunkHeightHandler chunkHeightHandler;
 
     private final int dataVersion;
 
@@ -528,7 +528,7 @@ public abstract class Chunk extends ChunkEntities {
         }
 
         if (this.imageFactory != null) {
-            this.chunkHeightHandler.updateHeight(coords);
+            getChunkHeightHandler().updateHeight(coords);
             this.imageFactory.generateImages();
         }
     }
