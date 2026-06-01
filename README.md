@@ -64,6 +64,36 @@ Some linux distributions may require `-Djdk.gtk.version=2` for the GUI to work:
 java -Djdk.gtk.version=2 -jar world-downloader.jar
 ```
 
+### Docker + web console
+The project ships a `Dockerfile` and `docker-compose.yml` that run the downloader headless behind a
+small login-protected **web management console** which mirrors every command-line option.
+
+```
+docker compose up -d --build
+```
+
+Then open **http://localhost:8080** (default login `admin` / `changeme` — change these in
+`docker-compose.yml`). From the console you can:
+- **sign in to your Minecraft account** three ways — **Microsoft** (device-code login: open the link,
+  enter the code), **access token** (paste an existing token), or **offline** username,
+- set every option (server address, ports, render distance, world output, center offset, and all the
+  map/behaviour toggles) — the same flags as the command line,
+- **start / stop / restart** the downloader,
+- watch live logs and status,
+- **save** all settings (persisted to the volume),
+- **export the world** as `.zip` or `.tar.gz`, or snapshot the directory into `./data/exports`.
+
+Point your Minecraft client at `localhost:25565` (the proxy port) to download a world. Worlds, the
+registry cache, your account session and saved settings persist in the `./data` folder (mounted at `/data`).
+
+| Port | Purpose |
+| ---- | ------- |
+| 8080 | Web management console |
+| 25565 | Minecraft proxy — connect your client here |
+
+Environment variables: `WEB_USERNAME`, `WEB_PASSWORD`, `SECRET_KEY` (auto-generated if unset),
+`WEB_PORT`, and `MS_CLIENT_ID` (Azure/Microsoft OAuth client id for Microsoft login; defaults to the
+public Minecraft launcher client id).
 
 ### Building from source
 <details>
