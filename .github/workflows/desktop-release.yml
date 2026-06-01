@@ -36,7 +36,9 @@ jobs:
         run: >
           dotnet publish desktop/WorldDownloaderManager.csproj
           -c Release -r win-x64 --self-contained true
+          -p:Platform=x64
           -p:WindowsPackageType=None
+          -p:WindowsAppSDKSelfContained=true
           -o "${{ github.workspace }}\publish"
 
       - name: Install NSIS
