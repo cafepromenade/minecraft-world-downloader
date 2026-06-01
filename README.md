@@ -1,6 +1,21 @@
 # minecraft-world-downloader
 A Minecraft world downloader that works as a proxy server between the client and the server to read & save chunk data. Download multiplayer worlds by connecting to them and walking around. Chunks can be sent back to the client to extend the render distance.
 
+> **This fork adds:** support for **every version from 1.8 through 26.1**, a fix for the 1.20.2+
+> *"Connection Lost — Loading NBT data"* error, and a **Dockerized web console** for running and managing
+> the downloader from your browser (Microsoft / access-token / offline account login, live logs, and
+> world export).
+
+### 📖 Documentation
+Full guides are in [**`docs/wiki/`**](docs/wiki) (also published to the project
+[wiki](https://github.com/cafepromenade/minecraft-world-downloader/wiki)):
+[Installation](docs/wiki/Installation.md) ·
+[Docker & web console](docs/wiki/Docker-Web-Console.md) ·
+[Authentication](docs/wiki/Authentication.md) ·
+[Supported versions](docs/wiki/Supported-Versions.md) ·
+[Command-line options](docs/wiki/Command-Line-Options.md) ·
+[Building from source](docs/wiki/Building-From-Source.md) ·
+[FAQ](docs/wiki/FAQ.md)
 
 ### Downloads  <a href="https://github.com/cafepromenade/minecraft-world-downloader/releases/latest"><img align="right" src="https://img.shields.io/github/downloads/cafepromenade/minecraft-world-downloader/total.svg"></a>
 Windows launcher: [world-downloader-launcher.exe](https://github.com/cafepromenade/minecraft-world-downloader-launcher/releases/latest/download/world-downloader-launcher.exe)
@@ -66,7 +81,9 @@ java -Djdk.gtk.version=2 -jar world-downloader.jar
 
 ### Docker + web console
 The project ships a `Dockerfile` and `docker-compose.yml` that run the downloader headless behind a
-small login-protected **web management console** which mirrors every command-line option.
+small **web management console** which mirrors every command-line option. See the
+[Docker & web console](https://github.com/cafepromenade/minecraft-world-downloader/wiki/Docker-Web-Console)
+wiki page for the full guide.
 
 ```
 docker compose up -d --build
