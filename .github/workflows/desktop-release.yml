@@ -32,6 +32,8 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Publish (self-contained, win-x64)
+        id: publish
+        continue-on-error: true
         shell: pwsh
         run: >
           dotnet publish desktop/WorldDownloaderManager.csproj
@@ -40,6 +42,29 @@ jobs:
           -p:WindowsPackageType=None
           -p:WindowsAppSDKSelfContained=true
           -o "${{ github.workspace }}\publish"
+
+      - name: Diagnose XAML compiler (only if publish failed)
+        if: steps.publish.outcome == 'failure'
+        shell: pwsh
+        run: |
+          $inp = Get-ChildItem desktop\obj -Recurse -Filter input.json -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $inp) { "No input.json found."; exit 0 }
+          "input.json: $($inp.FullName)"
+          $xc = Get-ChildItem "$env:USERPROFILE\.nuget\packages\microsoft.windowsappsdk" -Recurse -Filter XamlCompiler.exe -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -match 'net472' } | Select-Object -First 1
+          "XamlCompiler: $($xc.FullName)"
+          $out = Join-Path $inp.DirectoryName "diag_output.json"
+          & $xc.FullName $inp.FullName $out 2>&1 | ForEach-Object { "XC> $_" }
+          "=== XamlCompiler exit: $LASTEXITCODE ==="
+          "=== output.json ==="; Get-Content $out -Raw -ErrorAction SilentlyContinue
+          "=== GenXbf.dll present ==="
+          Get-ChildItem "$env:USERPROFILE\.nuget\packages" -Recurse -Filter GenXbf.dll -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.FullName }
+
+      - name: Fail if publish failed
+        if: steps.publish.outcome == 'failure'
+        run: exit 1
+        shell: pwsh
 
       - name: Install NSIS
         shell: pwsh

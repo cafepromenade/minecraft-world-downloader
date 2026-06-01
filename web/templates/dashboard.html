@@ -74,12 +74,13 @@
                 <legend>{{ group }}</legend>
                 {% for o in opts %}
                 {% if o.type == 'bool' %}
-                <div class="field">
+                <div class="field field-bool">
                     <label class="switch-label" title="{{ o.help }}">
                         <input type="checkbox" name="{{ o.key }}" value="true" {% if config.get(o.key) %}checked{% endif %}>
                         <span class="switch"></span>
                         <span>{{ o.label }}</span>
                     </label>
+                    <small class="help">{{ o.help }}</small>
                 </div>
                 {% else %}
                 <div class="field">
