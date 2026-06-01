@@ -72,8 +72,8 @@ small login-protected **web management console** which mirrors every command-lin
 docker compose up -d --build
 ```
 
-Then open **http://localhost:8080** (default login `admin` / `changeme` — change these in
-`docker-compose.yml`). From the console you can:
+Then open **http://localhost:8080** — the console has **no login by default** (set `WEB_PASSWORD`
+to gate it behind a username/password if you expose it beyond localhost). From the console you can:
 - **sign in to your Minecraft account** three ways — **Microsoft** (device-code login: open the link,
   enter the code), **access token** (paste an existing token), or **offline** username,
 - set every option (server address, ports, render distance, world output, center offset, and all the
@@ -91,9 +91,10 @@ registry cache, your account session and saved settings persist in the `./data` 
 | 8080 | Web management console |
 | 25565 | Minecraft proxy — connect your client here |
 
-Environment variables: `WEB_USERNAME`, `WEB_PASSWORD`, `SECRET_KEY` (auto-generated if unset),
-`WEB_PORT`, and `MS_CLIENT_ID` (Azure/Microsoft OAuth client id for Microsoft login; defaults to the
-public Minecraft launcher client id).
+Environment variables: `WEB_PORT`; `WEB_USERNAME` + `WEB_PASSWORD` (optional — set both to require a
+console login; off by default); `SECRET_KEY` (auto-generated if unset, only used when login is enabled);
+and `MS_CLIENT_ID` (Azure/Microsoft OAuth client id for Microsoft login; defaults to the public
+Minecraft launcher client id).
 
 ### Building from source
 <details>

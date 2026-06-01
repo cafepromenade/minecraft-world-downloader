@@ -41,7 +41,11 @@ JAR_PATH = os.environ.get("JAR_PATH", "/app/world-downloader.jar")
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
 WEB_PORT = int(os.environ.get("WEB_PORT", "8080"))
 USERNAME = os.environ.get("WEB_USERNAME", "admin")
-PASSWORD = os.environ.get("WEB_PASSWORD", "changeme")
+# The console itself has no login by default. Set WEB_PASSWORD to put the dashboard behind a
+# username/password gate (useful if you expose it beyond localhost). The Minecraft account login
+# (Microsoft / token / offline) is always required to download from online-mode servers.
+PASSWORD = os.environ.get("WEB_PASSWORD", "")
+LOGIN_ENABLED = bool(PASSWORD)
 
 os.makedirs(DATA_DIR, exist_ok=True)
 CONFIG_FILE = os.path.join(DATA_DIR, "manager-config.json")
@@ -373,7 +377,7 @@ auth_store = AuthStore()
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
-        if not session.get("auth"):
+        if LOGIN_ENABLED and not session.get("auth"):
             if request.path.startswith("/api/"):
                 return jsonify({"error": "unauthorized"}), 401
             return redirect(url_for("login", next=request.path))
@@ -383,6 +387,8 @@ def login_required(view):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if not LOGIN_ENABLED:
+        return redirect(url_for("index"))
     error = None
     if request.method == "POST":
         user_ok = hmac.compare_digest(request.form.get("username", ""), USERNAME)
@@ -414,6 +420,7 @@ def index():
         groups=options_by_group(),
         config=cfg,
         username=USERNAME,
+        login_enabled=LOGIN_ENABLED,
     )
 
 
@@ -629,7 +636,8 @@ def healthz():
 
 
 if __name__ == "__main__":
-    print("Minecraft World Downloader web manager on :%d (user: %s)" % (WEB_PORT, USERNAME), flush=True)
+    print("Minecraft World Downloader web manager on :%d (console login %s)" % (
+        WEB_PORT, "enabled" if LOGIN_ENABLED else "disabled"), flush=True)
     try:
         from waitress import serve
         serve(app, host="0.0.0.0", port=WEB_PORT, threads=8)
