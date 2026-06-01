@@ -12,13 +12,18 @@
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="18" />
         </Style>
+        <Style x:Key="Desc" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
     </Window.Resources>
 
     <ScrollViewer>
-        <StackPanel Spacing="16" Padding="26" MaxWidth="760" HorizontalAlignment="Stretch">
+        <StackPanel Spacing="16" Padding="26" MaxWidth="780" HorizontalAlignment="Stretch">
 
             <StackPanel Orientation="Horizontal" Spacing="14">
-                <TextBlock Text="&#x26CF;&#xFE0F;" FontSize="34" VerticalAlignment="Center" />
+                <TextBlock Text="&#x26CF;" FontSize="34" VerticalAlignment="Center" />
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="World Downloader" Style="{StaticResource TitleTextBlockStyle}" />
                     <TextBlock Text="Set up and run the web console in Docker"
@@ -33,12 +38,18 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="8">
                     <TextBlock Text="Data folder" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <TextBlock Text="Downloaded worlds, the registry cache, your account session and settings are stored here."
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                        <TextBox x:Name="FolderBox" IsReadOnly="True" PlaceholderText="Choose a folder…" />
-                        <Button x:Name="BrowseBtn" Grid.Column="1" Content="Browse…" Click="Browse_Click" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="FolderBox" IsReadOnly="True" PlaceholderText="Choose a folder…"
+                                 ToolTipService.ToolTip="The folder on your PC where everything is kept. It is mapped into the container as /data." />
+                        <Button x:Name="BrowseBtn" Grid.Column="1" Content="Browse…" Click="Browse_Click"
+                                ToolTipService.ToolTip="Pick the folder where downloaded worlds and data should be saved." />
                     </Grid>
+                    <TextBlock Style="{StaticResource Desc}"
+                               Text="Where downloaded worlds, the block/registry cache, your Minecraft account session and the console's saved settings are stored. Pick a folder with plenty of free space — a large world can be several GB." />
                 </StackPanel>
             </Border>
 
@@ -46,37 +57,88 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="14">
                     <TextBlock Text="Configuration" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
-                        <NumberBox x:Name="WebPortBox" Header="Web console port" Value="8080"
-                                   Minimum="1" Maximum="65535" SpinButtonPlacementMode="Compact" />
-                        <NumberBox x:Name="ProxyPortBox" Grid.Column="1" Header="Minecraft proxy port" Value="25565"
-                                   Minimum="1" Maximum="65535" SpinButtonPlacementMode="Compact" />
+
+                    <Grid ColumnSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <NumberBox x:Name="WebPortBox" Header="Web console port" Value="8080"
+                                       Minimum="1" Maximum="65535" SpinButtonPlacementMode="Compact"
+                                       ToolTipService.ToolTip="The port the management website listens on." />
+                            <TextBlock Style="{StaticResource Desc}"
+                                       Text="The console is served here — open http://localhost:&lt;this port&gt; in your browser." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <NumberBox x:Name="ProxyPortBox" Header="Minecraft proxy port" Value="25565"
+                                       Minimum="1" Maximum="65535" SpinButtonPlacementMode="Compact"
+                                       ToolTipService.ToolTip="The port the downloader's proxy listens on." />
+                            <TextBlock Style="{StaticResource Desc}"
+                                       Text="In Minecraft, connect to localhost:&lt;this port&gt; instead of the real server to download." />
+                        </StackPanel>
                     </Grid>
-                    <TextBox x:Name="ImageBox" Header="Docker image" />
-                    <ToggleSwitch x:Name="LoginSwitch" Header="Require a login to open the console"
-                                  Toggled="LoginSwitch_Toggled" />
-                    <Grid x:Name="LoginPanel" ColumnDefinitions="*,*" ColumnSpacing="14" Visibility="Collapsed">
-                        <TextBox x:Name="UserBox" Header="Console username" />
-                        <PasswordBox x:Name="PassBox" Grid.Column="1" Header="Console password" />
+
+                    <StackPanel>
+                        <TextBox x:Name="ImageBox" Header="Docker image"
+                                 ToolTipService.ToolTip="The container image to run." />
+                        <TextBlock Style="{StaticResource Desc}"
+                                   Text="The Docker image that gets run. Leave the default unless you build/host your own; use “Update image” to fetch the newest version." />
+                    </StackPanel>
+
+                    <StackPanel>
+                        <ToggleSwitch x:Name="LoginSwitch" Header="Require a login to open the console"
+                                      Toggled="LoginSwitch_Toggled"
+                                      ToolTipService.ToolTip="Protect the console with a username and password." />
+                        <TextBlock Style="{StaticResource Desc}"
+                                   Text="Off by default (fine for your own PC). Turn on to require the username and password below — recommended if the console is reachable from your network." />
+                    </StackPanel>
+
+                    <Grid x:Name="LoginPanel" ColumnSpacing="14" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBox x:Name="UserBox" Header="Console username"
+                                     ToolTipService.ToolTip="Username asked for when opening the console." />
+                            <TextBlock Style="{StaticResource Desc}" Text="The username you’ll type to open the console." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <PasswordBox x:Name="PassBox" Header="Console password"
+                                         ToolTipService.ToolTip="Password asked for when opening the console." />
+                            <TextBlock Style="{StaticResource Desc}" Text="The password you’ll type to open the console." />
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
 
             <!-- Actions -->
-            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <Button x:Name="StartBtn" Style="{StaticResource AccentButtonStyle}" Click="Start_Click" Content="▶  Start" />
-                <Button x:Name="StopBtn" Click="Stop_Click" Content="■  Stop" IsEnabled="False" />
-                <Button x:Name="OpenBtn" Click="Open_Click" Content="Open console" />
-                <Button x:Name="PullBtn" Click="Pull_Click" Content="Update image" />
-                <ProgressRing x:Name="Spinner" IsActive="False" Width="22" Height="22" />
-            </StackPanel>
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Button x:Name="StartBtn" Style="{StaticResource AccentButtonStyle}" Click="Start_Click" Content="Start"
+                                ToolTipService.ToolTip="Create and start the container with the settings above, then open the console in your browser." />
+                        <Button x:Name="StopBtn" Click="Stop_Click" Content="Stop" IsEnabled="False"
+                                ToolTipService.ToolTip="Stop and remove the running container. Your saved worlds in the data folder are kept." />
+                        <Button x:Name="OpenBtn" Click="Open_Click" Content="Open console"
+                                ToolTipService.ToolTip="Open the console website (http://localhost:&lt;web port&gt;) in your default browser." />
+                        <Button x:Name="PullBtn" Click="Pull_Click" Content="Update image"
+                                ToolTipService.ToolTip="Download the latest version of the Docker image from the registry." />
+                        <ProgressRing x:Name="Spinner" IsActive="False" Width="22" Height="22" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Desc}"
+                               Text="Start: launches everything and opens the browser.   Stop: shuts the container down (worlds are kept).   Open console: reopens the website.   Update image: pulls the newest build." />
+                </StackPanel>
+            </Border>
 
             <!-- Output -->
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="8">
                     <TextBlock Text="Output" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <ScrollViewer x:Name="LogScroll" Height="240" VerticalScrollBarVisibility="Auto">
-                        <TextBlock x:Name="LogText" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                    <TextBlock Style="{StaticResource Desc}" Text="Live output from the Docker commands this app runs." />
+                    <ScrollViewer x:Name="LogScroll" Height="220" VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="LogText" FontFamily="Consolas" FontSize="12"
                                    TextWrapping="Wrap" IsTextSelectionEnabled="True"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </ScrollViewer>
