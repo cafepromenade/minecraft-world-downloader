@@ -1,7 +1,13 @@
 package config;
 
 public enum Version {
-    // version numbers correspond to the earliest full release
+    // version numbers correspond to the earliest full release. For 1.8-1.11 the protocol/data values are
+    // synthetic lower-bound anchors so that bestMatch maps each version family to the right handler
+    // (1.8 has no real data version; 1.9-1.11 use their release data versions).
+    V1_8(47, 100),
+    V1_9(107, 169),
+    V1_10(210, 510),
+    V1_11(315, 819),
     V1_12(317, 1132),
     V1_13(341, 1444),
     V1_14(440, 1901),

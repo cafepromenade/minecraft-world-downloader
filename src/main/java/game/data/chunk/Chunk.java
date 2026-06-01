@@ -413,7 +413,7 @@ public abstract class Chunk extends ChunkEntities {
      * Mark this as a new chunk if it's sent in parts, which non-vanilla servers will do to send chunks to the client
      * before they are fully generated.
      */
-    void markAsNew() {
+    protected void markAsNew() {
         if (WorldManager.getInstance().markNewChunks()) {
             this.isNewChunk = true;
         }
