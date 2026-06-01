@@ -23,9 +23,7 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /app/web/requirements
 
 ENV JAR_PATH=/app/world-downloader.jar \
     DATA_DIR=/data \
-    WEB_PORT=8080 \
-    WEB_USERNAME=admin \
-    WEB_PASSWORD=changeme
+    WEB_PORT=8080
 
 RUN mkdir -p /data
 VOLUME ["/data"]

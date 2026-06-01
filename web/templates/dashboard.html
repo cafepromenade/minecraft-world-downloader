@@ -12,8 +12,10 @@
     <div class="topbar-right">
         <span id="statusBadge" class="badge stopped">●&nbsp;stopped</span>
         <span class="muted" id="uptime"></span>
+        {% if login_enabled %}
         <span class="muted">{{ username }}</span>
         <a class="btn small" href="{{ url_for('logout') }}">Log out</a>
+        {% endif %}
     </div>
 </header>
 
