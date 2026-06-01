@@ -80,7 +80,17 @@ public class RegistryLoader {
      * server jar couldn't yet generate reports at this point.
      */
     private boolean hasExistingReports() {
-        return version.equals("1.12.2") || blocksPath.toFile().exists();
+        return isLegacy() || blocksPath.toFile().exists();
+    }
+
+    /**
+     * Versions before 1.13 predate the server-jar data generators, so their registries are served from the
+     * bundled 1.12.2 reports instead. 1.8-1.12 all share the same numeric (id &lt;&lt; 4 | metadata) block
+     * scheme, so the 1.12.2 block registry is a valid superset for the older versions.
+     */
+    private boolean isLegacy() {
+        return version.startsWith("1.8") || version.startsWith("1.9")
+                || version.startsWith("1.10") || version.startsWith("1.11") || version.startsWith("1.12");
     }
 
     /**
@@ -195,7 +205,8 @@ public class RegistryLoader {
             try (InputStream inputStream = new FileInputStream(registryPath.toFile())) {
                 return EntityNames.fromRegistry(inputStream);
             }
-        } else if (version.equals("1.12.2")) {
+        } else if (isLegacy()) {
+            // 1.8 - 1.12.2 share the bundled 1.12.2 entity names
             return EntityNames.fromJson("1.12.2");
         } else if (version.equals("1.13.2")) {
             return EntityNames.fromJson("1.13.2");
@@ -229,8 +240,8 @@ public class RegistryLoader {
             try (InputStream inputStream = new FileInputStream(registryPath.toFile())) {
                 return ItemRegistry.fromRegistry(inputStream);
             }
-        } else if (version.equals("1.12.2")) {
-            return ItemRegistry.fromJson(version);
+        } else if (isLegacy()) {
+            return ItemRegistry.fromJson("1.12.2");
         } else {
             return new ItemRegistry();
         }
@@ -267,7 +278,7 @@ public class RegistryLoader {
     }
 
     public boolean versionSupportsBlockGenerator() {
-        return !version.startsWith("1.12");
+        return !isLegacy();
     }
 
     public boolean versionSupportsGenerators() {

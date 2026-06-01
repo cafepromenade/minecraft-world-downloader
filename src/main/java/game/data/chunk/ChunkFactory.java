@@ -53,7 +53,11 @@ public class ChunkFactory {
               Option.of(Version.V1_15, () -> new Chunk_1_15(chunkPos, dataVersion)),
               Option.of(Version.V1_14, () -> new Chunk_1_14(chunkPos, dataVersion)),
               Option.of(Version.V1_13, () -> new Chunk_1_13(chunkPos, dataVersion)),
-              Option.of(Version.V1_12, () -> new Chunk_1_12(chunkPos, dataVersion))
+              Option.of(Version.V1_12, () -> new Chunk_1_12(chunkPos, dataVersion)),
+              // 1.9-1.11 use the same paletted pre-flattening format as 1.12
+              Option.of(Version.V1_9, () -> new Chunk_1_12(chunkPos, dataVersion)),
+              // 1.8 uses the older direct block-array format (no palette)
+              Option.of(Version.V1_8, () -> new Chunk_1_8(chunkPos, dataVersion))
         );
     }
 
@@ -90,6 +94,46 @@ public class ChunkFactory {
             getUnparsed(chunkPos).setProvider(provider);
 
             this.parse();
+        };
+
+        if (executor != null) {
+            executor.execute(r);
+        } else {
+            r.run();
+        }
+    }
+
+    /**
+     * Handle a 1.8 Map Chunk Bulk packet, which sends several full chunk columns at once. The header
+     * lists a shared sky-light flag and, per column, the coordinates and section bitmask; the column
+     * data follows concatenated. Each column is parsed by a Chunk_1_8 reading from the shared provider.
+     */
+    public void addBulkChunks(DataTypeProvider provider) {
+        if (WorldManager.getInstance().isPaused()) {
+            return;
+        }
+
+        Runnable r = () -> {
+            boolean skylight = provider.readBoolean();
+            int count = provider.readVarInt();
+
+            int[] xs = new int[count];
+            int[] zs = new int[count];
+            int[] masks = new int[count];
+            for (int i = 0; i < count; i++) {
+                xs[i] = provider.readInt();
+                zs[i] = provider.readInt();
+                masks[i] = provider.readShort() & 0xFFFF;
+            }
+
+            int dataVersion = Config.versionReporter().getDataVersion();
+            for (int i = 0; i < count; i++) {
+                CoordinateDim2D pos = new CoordinateDim2D(xs[i], zs[i], WorldManager.getInstance().getDimension());
+
+                Chunk_1_8 chunk = new Chunk_1_8(pos, dataVersion);
+                WorldManager.getInstance().loadChunk(chunk, true, true);
+                chunk.readBulkColumn(masks[i], skylight, provider);
+            }
         };
 
         if (executor != null) {

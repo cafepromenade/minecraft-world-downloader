@@ -124,6 +124,7 @@ public class Config {
     public static void setProtocolVersion(int protocolVersion) {
         instance.protocolVersion = protocolVersion;
         instance.versionReporter = new VersionReporter(protocolVersion);
+        instance.dataVersion = instance.versionReporter.getDataVersion();
 
         try {
             WorldManager.getInstance().loadLevelData();
