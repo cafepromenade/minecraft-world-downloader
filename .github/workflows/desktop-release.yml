@@ -44,12 +44,15 @@ jobs:
 
       - name: Build installer
         shell: pwsh
-        run: >
-          makensis
-          "/DAPP_VERSION=${{ steps.ver.outputs.version }}"
-          "/DSRC_DIR=${{ github.workspace }}\publish"
-          "/DOUT_FILE=${{ github.workspace }}\WorldDownloaderManager-Setup.exe"
-          installer\installer.nsi
+        run: |
+          $exe = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          if (-not (Test-Path $exe)) { $exe = "$env:ProgramFiles\NSIS\makensis.exe" }
+          & $exe `
+            "/DAPP_VERSION=${{ steps.ver.outputs.version }}" `
+            "/DSRC_DIR=${{ github.workspace }}\publish" `
+            "/DOUT_FILE=${{ github.workspace }}\WorldDownloaderManager-Setup.exe" `
+            "installer\installer.nsi"
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed with exit code $LASTEXITCODE" }
 
       - uses: actions/upload-artifact@v4
         with:
