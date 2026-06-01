@@ -113,6 +113,14 @@ console login; off by default); `SECRET_KEY` (auto-generated if unset, only used
 and `MS_CLIENT_ID` (Azure/Microsoft OAuth client id for Microsoft login; defaults to the public
 Minecraft launcher client id).
 
+### Desktop manager (Windows)
+A small **WinUI 3** desktop app (`desktop/`) sets up and runs the Dockerized console for you: pick the
+folder where worlds and data are stored, choose the ports and (optional) login, then **Start** — it
+launches the container and opens the console in your browser. Download the **NSIS installer** from the
+[releases](https://github.com/cafepromenade/minecraft-world-downloader/releases) page (built by the
+`Desktop manager release` GitHub Actions workflow on each `v*` tag). It uses the image published to
+`ghcr.io/cafepromenade/minecraft-world-downloader`. Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
 ### Building from source
 <details>
   <summary>Dependencies on linux</summary>
