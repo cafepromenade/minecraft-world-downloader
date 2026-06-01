@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>World Downloader &middot; Console</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">⛏ World Downloader <span class="muted">console</span></div>
+    <div class="topbar-right">
+        <span id="statusBadge" class="badge stopped">●&nbsp;stopped</span>
+        <span class="muted" id="uptime"></span>
+        <span class="muted">{{ username }}</span>
+        <a class="btn small" href="{{ url_for('logout') }}">Log out</a>
+    </div>
+</header>
+
+<main class="layout">
+    <section class="panel config-panel">
+        <!-- ---------------- Minecraft account ---------------- -->
+        <div class="account-card">
+            <div class="account-head">
+                <h2>Minecraft account</h2>
+                <span id="acctStatus" class="badge stopped">not signed in</span>
+            </div>
+            <p class="hint">Required for online-mode servers. Choose any method below — Microsoft is recommended.</p>
+            <div class="account-methods">
+                <button type="button" class="btn primary" id="msBtn">Sign in with Microsoft</button>
+                <button type="button" class="btn" id="manualBtn">Use access token</button>
+                <button type="button" class="btn" id="offlineBtn">Offline username</button>
+                <button type="button" class="btn small" id="signoutBtn" style="display:none">Sign out</button>
+            </div>
+
+            <div id="msBox" class="auth-box" style="display:none">
+                <p>Open <a id="msLink" href="#" target="_blank" rel="noopener">microsoft.com/link</a>
+                   and enter this code:</p>
+                <div class="code" id="msCode">--------</div>
+                <p class="muted" id="msPollStatus">Waiting for you to sign in…</p>
+            </div>
+
+            <div id="manualBox" class="auth-box" style="display:none">
+                <label>Minecraft access token
+                    <input type="password" id="manualToken" placeholder="eyJ...">
+                </label>
+                <small class="help">From <code>launcher_accounts.json</code> or another auth tool. We look up your username automatically.</small>
+                <button type="button" class="btn primary small" id="manualSubmit">Save token</button>
+            </div>
+
+            <div id="offlineBox" class="auth-box" style="display:none">
+                <label>Username
+                    <input type="text" id="offlineUser" placeholder="Steve">
+                </label>
+                <small class="help">For offline-mode / cracked servers only. No token is used.</small>
+                <button type="button" class="btn primary small" id="offlineSubmit">Use offline</button>
+            </div>
+            <div id="authMsg" class="alert" style="display:none"></div>
+        </div>
+
+        <!-- ---------------- Configuration ---------------- -->
+        <h2>Configuration</h2>
+        <p class="hint">These mirror every command-line flag. Point your Minecraft client at
+            <code>this-host:{{ config.get('portLocal', '25565') }}</code> after pressing Start.</p>
+
+        <form id="configForm">
+            {% for group, opts in groups.items() %}
+            <fieldset>
+                <legend>{{ group }}</legend>
+                {% for o in opts %}
+                <div class="field {{ 'field-bool' if o.type == 'bool' else '' }}">
+                    {% if o.type == 'bool' %}
+                        <label class="switch-label" title="{{ o.help }}">
+                            <input type="checkbox" name="{{ o.key }}" value="true"
+                                   {% if config.get(o.key) %}checked{% endif %}>
+                            <span>{{ o.label }}</span>
+                        </label>
+                    {% else %}
+                        <label title="{{ o.help }}">{{ o.label }}
+                            <input type="{{ 'password' if o.type == 'password' else ('number' if o.type == 'int' else 'text') }}"
+                                   name="{{ o.key }}"
+                                   value="{{ config.get(o.key, '') }}"
+                                   placeholder="{{ o.default if o.default not in [None, ''] else '' }}"
+                                   {% if o.key == 'server' %}required{% endif %}>
+                        </label>
+                        <small class="help">{{ o.help }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </fieldset>
+            {% endfor %}
+
+            <div class="actions">
+                <button type="button" id="startBtn" class="btn primary">▶ Start</button>
+                <button type="button" id="stopBtn" class="btn danger" disabled>■ Stop</button>
+                <button type="button" id="restartBtn" class="btn">↻ Restart</button>
+                <button type="button" id="saveBtn" class="btn">💾 Save settings</button>
+            </div>
+
+            <fieldset class="export">
+                <legend>Export world</legend>
+                <p class="muted" id="worldInfo">No world saved yet.</p>
+                <div class="actions">
+                    <a class="btn" href="{{ url_for('api_download') }}?fmt=zip">⬇ Download .zip</a>
+                    <a class="btn" href="{{ url_for('api_download') }}?fmt=tar">⬇ Download .tar.gz</a>
+                    <button type="button" class="btn" id="exportDirBtn">📁 Export directory</button>
+                </div>
+                <small class="help">The live world is also at <code>./data/{{ config.get('worldOutputDir', 'world') }}</code> on the host (mounted volume). “Export directory” copies a timestamped snapshot into <code>./data/exports</code>.</small>
+            </fieldset>
+
+            <div id="formMsg" class="alert" style="display:none"></div>
+        </form>
+    </section>
+
+    <section class="panel log-panel">
+        <div class="log-header">
+            <h2>Logs</h2>
+            <label class="switch-label small"><input type="checkbox" id="autoscroll" checked><span>auto-scroll</span></label>
+        </div>
+        <pre id="logs" class="logs">Waiting for output…</pre>
+    </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let logSince = 0, running = false, msTimer = null;
+
+const fmtUptime = (s) => !s ? "" : (s>=3600?Math.floor(s/3600)+"h ":"")+(s%3600>=60?Math.floor((s%3600)/60)+"m ":"")+(s%60)+"s";
+const fmtBytes = (b) => { if(!b) return "0 B"; const u=["B","KB","MB","GB"]; let i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(i?1:0)+" "+u[i]; };
+
+function applyStatus(st) {
+    running = st.running;
+    const badge = $("statusBadge");
+    badge.className = "badge " + (running ? "running" : "stopped");
+    badge.innerHTML = running ? "●&nbsp;running (pid " + st.pid + ")" : "●&nbsp;stopped";
+    $("uptime").textContent = running ? fmtUptime(st.uptime) : "";
+    $("startBtn").disabled = running;
+    $("stopBtn").disabled = !running;
+    document.querySelectorAll("#configForm fieldset:not(.export) input").forEach(el => el.disabled = running);
+}
+
+function showMsg(box, text, ok) {
+    const m = $(box); m.style.display = "block";
+    m.className = "alert " + (ok ? "ok" : "error"); m.textContent = text;
+}
+
+function formData() {
+    const data = new FormData($("configForm"));
+    document.querySelectorAll('#configForm input[type=checkbox]').forEach(cb => { if (!cb.checked) data.set(cb.name, "false"); });
+    return data;
+}
+
+// ---------- status + logs polling ----------
+async function poll() {
+    try {
+        applyStatus(await (await fetch("api/status")).json());
+        const r = await (await fetch("api/logs?since=" + logSince)).json();
+        if (r.lines && r.lines.length) {
+            logSince = r.total;
+            const box = $("logs");
+            if (box.textContent === "Waiting for output…") box.textContent = "";
+            box.textContent += r.lines.join("\n") + "\n";
+            if ($("autoscroll").checked) box.scrollTop = box.scrollHeight;
+        }
+    } catch (e) {}
+}
+async function loadWorldInfo() {
+    try {
+        const w = await (await fetch("api/world-info")).json();
+        $("worldInfo").textContent = w.exists ? (w.files + " files · " + fmtBytes(w.size) + " · " + w.path) : "No world saved yet.";
+    } catch (e) {}
+}
+
+// ---------- downloader controls ----------
+async function post(url) {
+    const res = await fetch(url, { method: "POST", body: formData() });
+    const j = await res.json();
+    showMsg("formMsg", j.message || (j.ok ? "OK" : "Error"), j.ok);
+    if (j.status) applyStatus(j.status);
+    logSince = 0; $("logs").textContent = "Waiting for output…";
+}
+$("startBtn").onclick = () => { if ($("configForm").reportValidity()) post("api/start"); };
+$("stopBtn").onclick = () => post("api/stop");
+$("restartBtn").onclick = () => { if ($("configForm").reportValidity()) post("api/restart"); };
+$("saveBtn").onclick = async () => {
+    const j = await (await fetch("api/save", { method: "POST", body: formData() })).json();
+    showMsg("formMsg", j.message || "Saved.", true);
+};
+$("exportDirBtn").onclick = async () => {
+    const j = await (await fetch("api/export-dir", { method: "POST" })).json();
+    showMsg("formMsg", j.message, j.ok);
+};
+
+// ---------- account / auth ----------
+function applyAuth(a) {
+    const badge = $("acctStatus");
+    if (a.authenticated) {
+        badge.className = "badge running";
+        badge.textContent = (a.method || "") + ": " + (a.username || "signed in");
+        $("signoutBtn").style.display = "";
+    } else {
+        badge.className = "badge stopped";
+        badge.textContent = "not signed in";
+        $("signoutBtn").style.display = "none";
+    }
+}
+async function loadAuth() { try { applyAuth(await (await fetch("api/auth/status")).json()); } catch (e) {} }
+
+function toggleBox(id) {
+    ["msBox", "manualBox", "offlineBox"].forEach(b => $(b).style.display = (b === id ? "block" : "none"));
+}
+$("manualBtn").onclick = () => toggleBox("manualBox");
+$("offlineBtn").onclick = () => toggleBox("offlineBox");
+
+$("manualSubmit").onclick = async () => {
+    const fd = new FormData(); fd.set("token", $("manualToken").value);
+    const j = await (await fetch("api/auth/manual", { method: "POST", body: fd })).json();
+    showMsg("authMsg", j.ok ? ("Signed in as " + j.username) : j.message, j.ok);
+    if (j.ok) { toggleBox(""); loadAuth(); }
+};
+$("offlineSubmit").onclick = async () => {
+    const fd = new FormData(); fd.set("username", $("offlineUser").value);
+    const j = await (await fetch("api/auth/offline", { method: "POST", body: fd })).json();
+    showMsg("authMsg", j.ok ? ("Using offline username " + j.username) : j.message, j.ok);
+    if (j.ok) { toggleBox(""); loadAuth(); }
+};
+$("signoutBtn").onclick = async () => { await fetch("api/auth/logout", { method: "POST" }); loadAuth(); };
+
+$("msBtn").onclick = async () => {
+    toggleBox("msBox");
+    $("msPollStatus").textContent = "Requesting login code…";
+    if (msTimer) clearInterval(msTimer);
+    let flow;
+    try {
+        flow = await (await fetch("api/auth/microsoft/start", { method: "POST" })).json();
+    } catch (e) { $("msPollStatus").textContent = "Failed to start login."; return; }
+    if (flow.error) { $("msPollStatus").textContent = "Error: " + flow.error; return; }
+    $("msCode").textContent = flow.user_code;
+    const link = $("msLink"); link.href = flow.verification_uri; link.textContent = flow.verification_uri;
+    $("msPollStatus").textContent = "Waiting for you to sign in…";
+    window.open(flow.verification_uri, "_blank", "noopener");
+    msTimer = setInterval(async () => {
+        let r;
+        try { r = await (await fetch("api/auth/microsoft/poll?flow=" + flow.flow_id)).json(); }
+        catch (e) { return; }
+        if (r.state === "ok") {
+            clearInterval(msTimer); toggleBox("");
+            showMsg("authMsg", "Signed in as " + r.username, true); loadAuth();
+        } else if (r.state === "error") {
+            clearInterval(msTimer);
+            $("msPollStatus").textContent = "Error: " + (r.message || "login failed");
+        }
+    }, 4000);
+};
+
+loadAuth(); loadWorldInfo(); poll();
+setInterval(poll, 1500);
+setInterval(loadWorldInfo, 5000);
+</script>
+</body>
+</html>
