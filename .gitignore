@@ -16,3 +16,6 @@ cache/
 *.mca
 
 dependency-reduced-pom.xml
+
+# Docker web console runtime data (worlds, registry cache, auth session, settings)
+data/
