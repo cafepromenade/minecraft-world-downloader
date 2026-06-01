@@ -37,8 +37,9 @@
 
             <div id="msBox" class="auth-box" style="display:none">
                 <p>Open <a id="msLink" href="#" target="_blank" rel="noopener">microsoft.com/link</a>
-                   and enter this code:</p>
+                   and enter this code (copied to your clipboard automatically):</p>
                 <div class="code" id="msCode">--------</div>
+                <button type="button" class="btn small" id="msCopyBtn">📋 Copy code</button>
                 <p class="muted" id="msPollStatus">Waiting for you to sign in…</p>
             </div>
 
@@ -99,7 +100,7 @@
                 <button type="button" id="saveBtn" class="btn">💾 Save settings</button>
             </div>
 
-            <fieldset class="export">
+            <fieldset class="export" id="exportSection" style="display:none">
                 <legend>Export world</legend>
                 <p class="muted" id="worldInfo">No world saved yet.</p>
                 <div class="actions">
@@ -169,7 +170,11 @@ async function poll() {
 async function loadWorldInfo() {
     try {
         const w = await (await fetch("api/world-info")).json();
-        $("worldInfo").textContent = w.exists ? (w.files + " files · " + fmtBytes(w.size) + " · " + w.path) : "No world saved yet.";
+        // Only show the export section once an actual world (with files) exists.
+        $("exportSection").style.display = w.has_world ? "" : "none";
+        if (w.has_world) {
+            $("worldInfo").textContent = w.files + " files · " + fmtBytes(w.size) + " · " + w.path;
+        }
     } catch (e) {}
 }
 
@@ -228,6 +233,14 @@ $("offlineSubmit").onclick = async () => {
 };
 $("signoutBtn").onclick = async () => { await fetch("api/auth/logout", { method: "POST" }); loadAuth(); };
 
+$("msCopyBtn").onclick = async () => {
+    try {
+        await navigator.clipboard.writeText($("msCode").textContent);
+        $("msCopyBtn").textContent = "✓ Copied!";
+        setTimeout(() => { $("msCopyBtn").textContent = "📋 Copy code"; }, 1500);
+    } catch (e) {}
+};
+
 $("msBtn").onclick = async () => {
     toggleBox("msBox");
     $("msPollStatus").textContent = "Requesting login code…";
@@ -239,7 +252,9 @@ $("msBtn").onclick = async () => {
     if (flow.error) { $("msPollStatus").textContent = "Error: " + flow.error; return; }
     $("msCode").textContent = flow.user_code;
     const link = $("msLink"); link.href = flow.verification_uri; link.textContent = flow.verification_uri;
-    $("msPollStatus").textContent = "Waiting for you to sign in…";
+    let copied = false;
+    try { await navigator.clipboard.writeText(flow.user_code); copied = true; } catch (e) {}
+    $("msPollStatus").textContent = (copied ? "Code copied to clipboard — " : "") + "waiting for you to sign in…";
     window.open(flow.verification_uri, "_blank", "noopener");
     msTimer = setInterval(async () => {
         let r;

@@ -586,14 +586,24 @@ def api_world_info():
                     files += 1
                 except OSError:
                     pass
-    return jsonify({"exists": exists, "path": path, "size": size, "files": files})
+    return jsonify({"exists": exists, "path": path, "size": size, "files": files,
+                    "has_world": exists and files > 0})
+
+
+def _has_world_files(path):
+    if not os.path.isdir(path):
+        return False
+    for _root, _dirs, files in os.walk(path):
+        if files:
+            return True
+    return False
 
 
 @app.route("/api/download")
 @login_required
 def api_download():
     path = _world_path()
-    if not os.path.isdir(path):
+    if not _has_world_files(path):
         abort(404)
     fmt = request.args.get("fmt", "zip")
     name = os.path.basename(path) or "world"
