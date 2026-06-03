@@ -68,7 +68,9 @@ public class PacketBuilder {
 
         PacketBuilder builder = new PacketBuilder(protocol.clientBound(packetName));
 
-        if (Config.versionReporter().isAtLeast(Version.V1_20_6)) {
+        // From 1.20.3 the chat content is a (nameless) NBT text component instead of a JSON string;
+        // this applies to both SystemChat (1.20.3-1.20.5) and SetActionBarText (1.20.6+).
+        if (Config.versionReporter().isAtLeast(Version.V1_20_4)) {
             builder.writeNbtDirect(message.toNbt());
         } else {
             builder.writeString(message.toJson());
