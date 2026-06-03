@@ -107,7 +107,9 @@ public class ContainerManager {
     private void sendInventorySavedMessage(InventoryWindow window) {
         if (Config.sendInfoMessages()) {
             Chat message = new Chat("Hui Downloader saved inventory at " + window.getContainerLocation());
-            Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
+            message.setColor("green");
+            // Send to the chat box (persistent) rather than the action bar, which only flashes briefly.
+            Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.CHAT));
         }
     }
 
