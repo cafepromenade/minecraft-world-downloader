@@ -610,9 +610,9 @@
 			},
 			"serverBound": {
 				"0x0b": "ConfigurationAcknowledged",
-				"0x0c": "ContainerClose",
-				"0x12": "Interact",
-				"0x16": "MovePlayerPos",
+				"0x0e": "ContainerClose",
+				"0x13": "Interact",
+				"0x17": "MovePlayerPos",
 				"0x18": "MovePlayerPosRot",
 				"0x19": "MovePlayerRot",
 				"0x1b": "MoveVehicle",
