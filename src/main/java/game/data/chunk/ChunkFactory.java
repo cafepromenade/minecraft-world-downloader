@@ -167,6 +167,14 @@ public class ChunkFactory {
         Chunk chunk = worldManager.getChunk(chunkPos);
         if (chunk == null) {
             chunk = getVersionedChunk(chunkPos);
+
+            // Preserve inventories saved in a previous session: seed block entities from the on-disk copy
+            // so the upcoming parse doesn't overwrite saved containers with empty ones.
+            var savedNbt = worldManager.getSavedChunkNbt(chunkPos);
+            if (savedNbt != null) {
+                chunk.seedBlockEntitiesFromDisk(savedNbt);
+            }
+
             worldManager.loadChunk(chunk, true, true);
         }
 
