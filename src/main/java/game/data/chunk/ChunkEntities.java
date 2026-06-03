@@ -49,13 +49,11 @@ public abstract class ChunkEntities extends ChunkEvents {
      */
     public void addInventory(InventoryWindow window, boolean sendMessages) {
         CompoundTag blockEntity = (CompoundTag) blockEntities.get(window.getContainerLocation());
-        boolean beExisted = blockEntity != null;
 
         // if a block entity is missing, try to generate it first. If there's no block there we don't save anything.
         if (blockEntity == null) {
             BlockState bs = getBlockStateAt(window.getContainerLocation().withinChunk());
             if (bs == null) {
-                System.out.println("[Hui] addInventory FAILED (no block entity, no block state) @ " + window.getContainerLocation());
                 if (sendMessages) {
                     sendInventoryFailureMessage(window);
                 }
@@ -64,8 +62,6 @@ public abstract class ChunkEntities extends ChunkEvents {
             blockEntity = generateBlockEntity(bs.getName(),  window.getContainerLocation());
             blockEntities.put(window.getContainerLocation(), blockEntity);
         }
-        System.out.println("[Hui] addInventory writing @ " + window.getContainerLocation()
-            + " | blockEntityExisted=" + beExisted + " items=" + window.getSlotsNbt().size());
 
         String type = RegistryManager.getInstance().getMenuRegistry().getName(window.getType());
 

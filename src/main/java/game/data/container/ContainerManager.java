@@ -82,11 +82,6 @@ public class ContainerManager {
         Chunk c = WorldManager.getInstance().getChunk(window.containerLocation.globalToChunk().addDimension(WorldManager.getInstance().getDimension()));
         BlockState block = (c != null) ? c.getBlockStateAt(window.getContainerLocation().withinChunk()) : null;
 
-        System.out.println("[Hui] close container @ " + window.getContainerLocation()
-            + " | chunkLoaded=" + (c != null)
-            + " block=" + (block != null ? block.getName() : "NULL")
-            + " slots=" + window.getSlotList().size());
-
         // Double chests: split into two halves (each half is stored/applied via the recursive call).
         if (c != null && block != null && window.getSlotList().size() == 54 && block.hasProperty("type") && block.isDoubleChest()) {
             WorldManager.getInstance().touchChunk(c);
