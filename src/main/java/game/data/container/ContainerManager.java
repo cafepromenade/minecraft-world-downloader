@@ -82,6 +82,11 @@ public class ContainerManager {
         Chunk c = WorldManager.getInstance().getChunk(window.containerLocation.globalToChunk().addDimension(WorldManager.getInstance().getDimension()));
         BlockState block = (c != null) ? c.getBlockStateAt(window.getContainerLocation().withinChunk()) : null;
 
+        System.out.println("[Hui] close container @ " + window.getContainerLocation()
+            + " | chunkLoaded=" + (c != null)
+            + " block=" + (block != null ? block.getName() : "NULL")
+            + " slots=" + window.getSlotList().size());
+
         // Double chests: split into two halves (each half is stored/applied via the recursive call).
         if (c != null && block != null && window.getSlotList().size() == 54 && block.hasProperty("type") && block.isDoubleChest()) {
             WorldManager.getInstance().touchChunk(c);
@@ -108,8 +113,9 @@ public class ContainerManager {
         if (Config.sendInfoMessages()) {
             Chat message = new Chat("Hui Downloader saved inventory at " + window.getContainerLocation());
             message.setColor("green");
-            // Send to the chat box (persistent) rather than the action bar, which only flashes briefly.
+            // Show it both in the chat box (persistent) and on the action bar (above the hotbar).
             Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.CHAT));
+            Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
         }
     }
 

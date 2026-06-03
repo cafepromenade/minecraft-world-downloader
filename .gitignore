@@ -25,3 +25,5 @@ desktop/bin/
 desktop/obj/
 publish/
 *.user
+
+.tmp_build/
