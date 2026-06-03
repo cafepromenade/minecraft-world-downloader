@@ -12,8 +12,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -317,6 +319,52 @@ public class WorldManager {
             while (!callbacks.isEmpty()) {
                 callbacks.remove().run();
             }
+        }
+    }
+
+    // Small bounded LRU of region files read back from disk, used to preserve already-saved block-entity
+    // contents when a chunk is revisited in a later session. Bounded so we never hold more than a few
+    // region files in memory. A null value means "checked, no saved file there".
+    private final Map<CoordinateDim2D, McaFile> savedRegionReadCache = Collections.synchronizedMap(
+        new LinkedHashMap<>(8, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<CoordinateDim2D, McaFile> eldest) {
+                return size() > 4;
+            }
+        }
+    );
+
+    /**
+     * Read the NBT of a chunk previously written to disk, if present. Returns null when the chunk has not
+     * been saved yet (or cannot be read). Used to preserve saved block-entity contents (chest inventories,
+     * etc.) when a chunk is revisited in a later session. Region files are cached in a small bounded LRU so
+     * this stays cheap and never holds more than a few region files in memory.
+     */
+    public Tag getSavedChunkNbt(CoordinateDim2D chunkCoordinate) {
+        try {
+            CoordinateDim2D regionCoordinate = chunkCoordinate.chunkToDimRegion();
+
+            McaFile mca;
+            synchronized (savedRegionReadCache) {
+                if (savedRegionReadCache.containsKey(regionCoordinate)) {
+                    mca = savedRegionReadCache.get(regionCoordinate);
+                } else {
+                    mca = McaFile.ofCoords(regionCoordinate);
+                    savedRegionReadCache.put(regionCoordinate, mca); // may be null = "no saved file here"
+                }
+            }
+
+            if (mca == null) {
+                return null;
+            }
+
+            ChunkBinary binary = mca.getChunkBinary(chunkCoordinate);
+            if (binary == null) {
+                return null;
+            }
+            return binary.getNbt().getTag();
+        } catch (Exception ex) {
+            return null;
         }
     }
 
