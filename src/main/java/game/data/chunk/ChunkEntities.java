@@ -87,7 +87,7 @@ public abstract class ChunkEntities extends ChunkEvents {
 
     private void sendInventoryMessage(InventoryWindow blockEntity) {
         if (Config.sendInfoMessages()) {
-            String message = "Recorded inventory at " + blockEntity.getContainerLocation();
+            String message = "Hui Downloader saved inventory at " + blockEntity.getContainerLocation();
             Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
         }
     }
