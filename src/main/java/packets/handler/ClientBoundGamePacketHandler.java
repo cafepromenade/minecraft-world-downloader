@@ -170,6 +170,18 @@ public class ClientBoundGamePacketHandler extends PacketHandler {
             return true;
         });
 
+        operations.put("ContainerSetSlot", provider -> {
+            int windowId = provider.readNext();
+            int slot = provider.readShort();
+            try {
+                worldManager.getContainerManager().setSlot(windowId, slot, provider.readSlot());
+            } catch (RuntimeException ex) {
+                // couldn't parse the item (e.g. an unknown data component); keep forwarding the packet
+            }
+
+            return true;
+        });
+
         operations.put("MerchantOffers", provider -> {
             worldManager.getEntityRegistry().addVillagerTrades(provider);
             return true;

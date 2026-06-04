@@ -24,10 +24,16 @@ public class ContainerManager {
     private Coordinate3D lastInteractedWith;
     private final Map<Integer, InventoryWindow> knownWindows;
     private final Map<CoordinateDim3D, InventoryWindow> storedWindows;
+    private final PlayerInventory playerInventory;
 
     public ContainerManager() {
         knownWindows = new HashMap<>();
         storedWindows = new HashMap<>();
+        playerInventory = new PlayerInventory();
+    }
+
+    public PlayerInventory getPlayerInventory() {
+        return playerInventory;
     }
 
     public void lastInteractedWith(Coordinate3D coordinates) {
@@ -169,12 +175,28 @@ public class ContainerManager {
     }
 
     public void items(int windowId, int count, DataTypeProvider provider) {
+        // window 0 is the player's own inventory; remember it so it can be written to level.dat
+        if (windowId == PLAYER_INVENTORY) {
+            playerInventory.setSlots(provider.readSlots(count));
+            return;
+        }
+
         InventoryWindow window = knownWindows.get(windowId);
 
         if (window != null) {
             List<Slot> slots = provider.readSlots(count);
 
             window.setSlots(slots);
+        }
+    }
+
+    /**
+     * Single-slot update. Only window 0 (the player's own inventory) is tracked here; container
+     * slot updates are still captured via the full-content packet on close.
+     */
+    public void setSlot(int windowId, int slot, Slot slotData) {
+        if (windowId == PLAYER_INVENTORY) {
+            playerInventory.setSlot(slot, slotData);
         }
     }
 
