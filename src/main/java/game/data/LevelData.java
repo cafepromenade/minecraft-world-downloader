@@ -6,6 +6,7 @@ import config.Config;
 import config.Version;
 import game.data.coordinates.Coordinate3D;
 import game.data.coordinates.CoordinateDouble3D;
+import game.data.container.PlayerInventory;
 import game.data.dimension.Dimension;
 import java.util.ArrayList;
 import java.util.List;
@@ -146,6 +147,12 @@ public class LevelData {
                     new DoubleTag(playerPosition.getZ() * 1.0)
             )));
             player.add("Dimension", new StringTag(WorldManager.getInstance().getDimension().toString()));
+
+            // carry over the player's current inventory, if we've captured it
+            PlayerInventory inventory = worldManager.getContainerManager().getPlayerInventory();
+            if (inventory.hasItems()) {
+                player.add("Inventory", inventory.toNbt());
+            }
 
             // set the world spawn to match the last known player location
             data.add("SpawnX", new IntTag(playerPosition.getX()));

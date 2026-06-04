@@ -18,7 +18,8 @@ cache/
 dependency-reduced-pom.xml
 
 # Docker web console runtime data (worlds, registry cache, auth session, settings)
-data/
+# Anchored to the repo root so it doesn't also match the src/main/java/game/data package.
+/data/
 
 # .NET / WinUI desktop build output
 desktop/bin/
