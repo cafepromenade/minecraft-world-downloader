@@ -36,6 +36,7 @@ public class Config {
     private static Path configPath;
 
     private static PacketInjector injector;
+    private static PacketInjector serverBoundInjector;
     private static Config instance;
 
     // fields marked transient so they are not written to JSON file
@@ -339,6 +340,18 @@ public class Config {
         return injector;
     }
 
+    /**
+     * Serverbound packet injector: lets the proxy originate packets toward the SERVER
+     * (used by the auto-open-containers feature).
+     */
+    public static void registerServerBoundInjector(PacketInjector injector) {
+        Config.serverBoundInjector = injector;
+    }
+
+    public static PacketInjector getServerBoundInjector() {
+        return serverBoundInjector;
+    }
+
 
     @Option(name = "--help", aliases = {"-h", "help", "-help", "--h"},
             usage = "Show this help message.")
@@ -396,6 +409,19 @@ public class Config {
     @Option(name = "--disable-chunk-saving",
             usage = "Disable writing chunks to disk, mostly for debugging purposes.")
     public  boolean disableWriteChunks = false;
+
+    @Option(name = "--auto-open-containers",
+            usage = "EXPERIMENTAL: automatically open nearby containers (within reach, one at a time, "
+                    + "rate-limited) to record their contents as you move. May trip server anti-cheat.")
+    public boolean autoOpenContainers = false;
+
+    @Option(name = "--auto-open-delay",
+            usage = "Minimum milliseconds between auto-opened containers (default 700). Higher = safer.")
+    public int autoOpenDelayMs = 700;
+
+    @Option(name = "--auto-open-reach",
+            usage = "Max distance (blocks) to a container for auto-open; keep at/below survival reach (default 4.0).")
+    public double autoOpenReach = 4.0;
 
     @Option(name = "--disable-world-gen",
             usage = "Set world type to a superflat void to prevent new chunks from being added.")
@@ -470,6 +496,12 @@ public class Config {
     }
 
     public static boolean renderOtherPlayers() { return instance.renderOtherPlayers; }
+
+    public static boolean autoOpenContainers() { return instance.autoOpenContainers; }
+
+    public static int autoOpenDelayMs() { return Math.max(50, instance.autoOpenDelayMs); }
+
+    public static double autoOpenReach() { return instance.autoOpenReach; }
 
     public static VersionReporter versionReporter() {
         return instance.versionReporter;

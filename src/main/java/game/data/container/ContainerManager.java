@@ -187,6 +187,16 @@ public class ContainerManager {
             List<Slot> slots = provider.readSlots(count);
 
             window.setSlots(slots);
+
+            // Auto-open mode: the player never opened this container and won't close it. Save it now,
+            // then have the auto-opener close it server-side and advance to the next one.
+            if (Config.autoOpenContainers()) {
+                ContainerAutoOpener opener = WorldManager.getInstance().getContainerAutoOpener();
+                if (opener.isWaiting()) {
+                    closeWindow(windowId);
+                    opener.onContentCaptured(windowId);
+                }
+            }
         }
     }
 

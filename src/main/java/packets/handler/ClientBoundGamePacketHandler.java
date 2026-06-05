@@ -56,6 +56,18 @@ public class ClientBoundGamePacketHandler extends PacketHandler {
             return true;
         });
 
+        // Track the player's gamemode so the (opt-in) auto-open feature can gate on spectator mode.
+        // The Game Event packet is [unsigned byte event][float value]; event 3 = change game mode,
+        // value = 0 survival / 1 creative / 2 adventure / 3 spectator.
+        operations.put("GameEvent", provider -> {
+            int event = provider.readNext() & 0xFF;
+            float value = provider.readFloat();
+            if (event == 3) {
+                WorldManager.getInstance().setPlayerGamemode((int) value);
+            }
+            return true;
+        });
+
         operations.put("MoveEntityPos", provider -> {
             entityRegistry.updatePositionRelative(provider);
             return true;

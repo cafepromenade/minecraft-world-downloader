@@ -83,6 +83,9 @@ public class WorldManager {
     private final Set<Dimension> savingDimension;
 
     private ContainerManager containerManager;
+    private game.data.container.ContainerAutoOpener containerAutoOpener;
+    /** Player gamemode (0 survival, 1 creative, 2 adventure, 3 spectator); -1 until observed. */
+    private volatile int playerGamemode = -1;
     private CommandBlockManager commandBlockManager;
     private VillagerManager villagerManager;
     private DimensionRegistry dimensionCodec;
@@ -554,6 +557,69 @@ public class WorldManager {
             containerManager = new ContainerManager();
         }
         return containerManager;
+    }
+
+    public void setPlayerGamemode(int gamemode) {
+        this.playerGamemode = gamemode;
+    }
+
+    public int getPlayerGamemode() {
+        return playerGamemode;
+    }
+
+    public game.data.container.ContainerAutoOpener getContainerAutoOpener() {
+        if (containerAutoOpener == null) {
+            containerAutoOpener = new game.data.container.ContainerAutoOpener();
+        }
+        return containerAutoOpener;
+    }
+
+    /**
+     * Find the closest openable container (chest, barrel, hopper, dropper, dispenser, shulker box,
+     * furnace, ...) within {@code reach} blocks of {@code player} whose contents have not yet been
+     * captured and that is not excluded. Returns the container's global position, or null if none.
+     * Assumes default centering (--center 0); positions are compared in real (global) coordinates.
+     */
+    public Coordinate3D findOpenableContainerNear(Coordinate3D player, double reach,
+                                                  java.util.function.Predicate<Coordinate3D> exclude) {
+        if (dimension == null || player == null) {
+            return null;
+        }
+        int r = (int) Math.ceil(reach);
+        int cxMin = (player.getX() - r) >> 4, cxMax = (player.getX() + r) >> 4;
+        int czMin = (player.getZ() - r) >> 4, czMax = (player.getZ() + r) >> 4;
+        double bestSq = reach * reach;
+        Coordinate3D best = null;
+        for (int cx = cxMin; cx <= cxMax; cx++) {
+            for (int cz = czMin; cz <= czMax; cz++) {
+                Chunk c = getChunk(new Coordinate2D(cx, cz).addDimension(this.dimension));
+                if (c == null) {
+                    continue;
+                }
+                for (Coordinate3D pos : c.getBlockEntityPositions()) {
+                    if (exclude != null && exclude.test(pos)) {
+                        continue;
+                    }
+                    double dx = pos.getX() + 0.5 - player.getX();
+                    double dy = pos.getY() + 0.5 - player.getY();
+                    double dz = pos.getZ() + 0.5 - player.getZ();
+                    double distSq = dx * dx + dy * dy + dz * dz;
+                    if (distSq > bestSq) {
+                        continue;
+                    }
+                    if (c.hasCapturedItems(pos)) {
+                        continue;
+                    }
+                    BlockState bs = c.getBlockStateAt(pos.withinChunk());
+                    if (bs == null || !game.data.container.ContainerAutoOpener.isOpenable(bs.getName())) {
+                        continue;
+                    }
+                    bestSq = distSq;
+                    best = pos;
+                }
+            }
+        }
+        return best;
     }
     
     public CommandBlockManager getCommandBlockManager() {
