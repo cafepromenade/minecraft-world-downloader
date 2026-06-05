@@ -688,6 +688,7 @@
 			"version": "1.21",
 			"dataVersion": 3953,
 			"clientBound": {
+				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
 				"0x09": "BlockUpdate",
@@ -732,6 +733,7 @@
 			"version": "1.21.3",
 			"dataVersion": 4082,
 			"clientBound": {
+				"0x23": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
 				"0x09": "BlockUpdate",
@@ -776,6 +778,7 @@
 			"version": "1.21.4",
 			"dataVersion": 4189,
 			"clientBound": {
+				"0x23": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
 				"0x09": "BlockUpdate",
@@ -820,6 +823,7 @@
 			"version": "1.21.5",
 			"dataVersion": 4325,
 			"clientBound": {
+				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x06": "BlockEntityData",
 				"0x08": "BlockUpdate",
@@ -864,6 +868,7 @@
 			"version": "1.21.6",
 			"dataVersion": 4435,
 			"clientBound": {
+				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x06": "BlockEntityData",
 				"0x08": "BlockUpdate",
@@ -908,6 +913,7 @@
 			"version": "1.21.8",
 			"dataVersion": 4440,
 			"clientBound": {
+				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x06": "BlockEntityData",
 				"0x08": "BlockUpdate",
