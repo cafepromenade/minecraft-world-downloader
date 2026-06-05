@@ -423,6 +423,12 @@ public class Config {
             usage = "Max distance (blocks) to a container for auto-open; keep at/below survival reach (default 4.0).")
     public double autoOpenReach = 4.0;
 
+    @Option(name = "--auto-open-gamemodes",
+            usage = "Which gamemodes the auto-open sweep runs in: 'all' (default, any mode incl. survival), "
+                    + "or a comma list of survival,creative,adventure,spectator. A restricted list only "
+                    + "activates once that gamemode is observed (e.g. after switching into spectator).")
+    public String autoOpenGamemodes = "all";
+
     @Option(name = "--disable-world-gen",
             usage = "Set world type to a superflat void to prevent new chunks from being added.")
     public boolean disableWorldGen = false;
@@ -502,6 +508,28 @@ public class Config {
     public static int autoOpenDelayMs() { return Math.max(50, instance.autoOpenDelayMs); }
 
     public static double autoOpenReach() { return instance.autoOpenReach; }
+
+    /**
+     * Allowed gamemodes for the auto-open sweep, or null for "all gamemodes" (no gate).
+     * Names map to ids: survival=0, creative=1, adventure=2, spectator=3.
+     */
+    public static java.util.Set<Integer> autoOpenGamemodes() {
+        String v = instance.autoOpenGamemodes;
+        if (v == null || v.isBlank() || v.equalsIgnoreCase("all")) {
+            return null;
+        }
+        java.util.Set<Integer> set = new java.util.HashSet<>();
+        for (String part : v.split(",")) {
+            switch (part.trim().toLowerCase()) {
+                case "survival": case "0": set.add(0); break;
+                case "creative": case "1": set.add(1); break;
+                case "adventure": case "2": set.add(2); break;
+                case "spectator": case "3": set.add(3); break;
+                default: break;
+            }
+        }
+        return set.isEmpty() ? null : set;
+    }
 
     public static VersionReporter versionReporter() {
         return instance.versionReporter;
