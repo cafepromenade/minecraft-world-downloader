@@ -28,6 +28,7 @@ public class MenuRegistry {
         NUM_SLOTS.put("minecraft:shulker_box", 27);
         NUM_SLOTS.put("minecraft:smoker", 3);
         NUM_SLOTS.put("minecraft:lectern", 1);
+        NUM_SLOTS.put("minecraft:crafter_3x3", 9); // 1.21 crafter (3x3 grid); contents stored under "Items"
     }
 
     private Map<Integer, String> menus;

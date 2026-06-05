@@ -35,14 +35,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ContainerAutoOpener {
     /** How long to wait for a container's content after sending the open, before giving up on it. */
     private static final long OPEN_TIMEOUT_MS = 1500;
-    /** Only sweep while the player is in spectator mode (gamemode 3). */
-    private static final int SPECTATOR = 3;
+    /** A pending (us-opened) flag older than this is considered stale and must NOT swallow a screen —
+     *  otherwise an auto-open the server never answered would eat the player's next real open. */
+    private static final long PENDING_TTL_MS = 2000;
 
     private static final Set<String> OPENABLE = Set.of(
             "minecraft:chest", "minecraft:trapped_chest", "minecraft:barrel",
             "minecraft:hopper", "minecraft:dropper", "minecraft:dispenser",
             "minecraft:furnace", "minecraft:blast_furnace", "minecraft:smoker",
-            "minecraft:brewing_stand"
+            "minecraft:brewing_stand", "minecraft:crafter", "minecraft:lectern"
     );
 
     /** Positions we have already attempted (captured, blocked, or unopenable) — never retried. */
@@ -51,6 +52,7 @@ public class ContainerAutoOpener {
     /** Set when we inject an open; the matching clientbound OpenScreen is swallowed so the client GUI
      *  never opens (a player cannot move while a container GUI is open, which would stall the sweep). */
     private volatile boolean pendingOpen = false;
+    private volatile long pendingOpenMs = 0;
     private volatile long waitStartMs = 0;
     private volatile long lastOpenMs = 0;
     /** Latest block-interaction sequence seen from the real client; reused so we never get ahead of it. */
@@ -73,10 +75,13 @@ public class ContainerAutoOpener {
      * screen was opened by us, signalling that it must NOT be forwarded to the player's client.
      */
     public boolean claimPending() {
-        if (pendingOpen) {
+        if (pendingOpen && (System.currentTimeMillis() - pendingOpenMs) < PENDING_TTL_MS) {
             pendingOpen = false;
             return true;
         }
+        // Stale or unset: clear it so an auto-open the server never answered can NEVER swallow the
+        // player's own (real) container open later. This is the "have to click multiple times" fix.
+        pendingOpen = false;
         return false;
     }
 
@@ -88,8 +93,12 @@ public class ContainerAutoOpener {
         if (!Config.autoOpenContainers() || playerPos == null) {
             return;
         }
-        // Spectator-only gate: never sweep unless the player is currently in spectator mode.
-        if (WorldManager.getInstance().getPlayerGamemode() != SPECTATOR) {
+        // Gamemode gate. Config.autoOpenGamemodes() == null means "all gamemodes" (no gate — runs even
+        // before the gamemode is known, so it works in survival on join without toggling). A non-null
+        // set restricts to those gamemodes; an unknown gamemode (-1) is never in the set, so a
+        // restricted sweep only starts once the mode has been observed (e.g. switching into spectator).
+        java.util.Set<Integer> allowed = Config.autoOpenGamemodes();
+        if (allowed != null && !allowed.contains(WorldManager.getInstance().getPlayerGamemode())) {
             return;
         }
         long now = System.currentTimeMillis();
@@ -97,8 +106,10 @@ public class ContainerAutoOpener {
             if (now - waitStartMs < OPEN_TIMEOUT_MS) {
                 return; // still waiting for this container's content
             }
-            // Timed out: container was blocked/obstructed/unopenable. Leave it in `attempted` and move on.
+            // Timed out: container was blocked/obstructed/unopenable. Drop the stale pending flag too
+            // (so it can't swallow a real open), leave it in `attempted`, and move on to the next one.
             waiting = false;
+            pendingOpen = false;
         }
         if (now - lastOpenMs < Config.autoOpenDelayMs()) {
             return;
@@ -117,6 +128,7 @@ public class ContainerAutoOpener {
         sendOpen(target);
         waiting = true;
         pendingOpen = true;
+        pendingOpenMs = now;
         waitStartMs = now;
         lastOpenMs = now;
     }
