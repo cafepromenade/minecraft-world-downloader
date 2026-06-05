@@ -4,6 +4,8 @@ import config.Config;
 import game.data.WorldManager;
 import game.data.coordinates.Coordinate3D;
 import game.protocol.Protocol;
+import packets.builder.Chat;
+import packets.builder.MessageTarget;
 import packets.builder.PacketBuilder;
 
 import java.util.Set;
@@ -161,6 +163,20 @@ public class ContainerAutoOpener {
         packet.writeBoolean(false);     // head inside block
         packet.writeVarInt(lastSequence); // block-change sequence (MC 1.19+)
         Config.getServerBoundInjector().enqueuePacket(packet);
+
+        // Diagnostic: show on the action bar that the sweep is actively trying to open this container.
+        // If you see this but no "saved inventory" follows, the server is rejecting our open; if you
+        // never see it while moving near chests, the sweep isn't finding/targeting them.
+        announce("auto-open ⟳ " + pos.getX() + " " + pos.getY() + " " + pos.getZ(), "yellow");
+    }
+
+    private void announce(String text, String color) {
+        if (!Config.sendInfoMessages() || Config.getPacketInjector() == null) {
+            return;
+        }
+        Chat msg = new Chat(text);
+        msg.setColor(color);
+        Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(msg, MessageTarget.GAMEINFO));
     }
 
     private void sendClose(int windowId) {
