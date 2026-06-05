@@ -557,6 +557,7 @@
 			"version": "1.20.2",
 			"dataVersion": 3578,
 			"clientBound": {
+				"0x20": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
 				"0x09": "BlockUpdate",
@@ -599,6 +600,7 @@
 			"version": "1.20.4",
 			"dataVersion": 3700,
 			"clientBound": {
+				"0x20": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
 				"0x09": "BlockUpdate",
@@ -641,6 +643,7 @@
 			"version": "1.20.6",
 			"dataVersion": 3839,
 			"clientBound": {
+				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
 				"0x09": "BlockUpdate",

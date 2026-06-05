@@ -45,6 +45,27 @@ public abstract class ChunkEntities extends ChunkEvents {
     }
 
     /**
+     * Global positions of all known block entities in this chunk. Returns a snapshot copy so callers
+     * on other threads (e.g. the auto-opener) can iterate without risking a ConcurrentModification.
+     */
+    public java.util.List<Coordinate3D> getBlockEntityPositions() {
+        return new java.util.ArrayList<>(blockEntities.keySet());
+    }
+
+    /**
+     * Whether the block entity at the given global position already has a non-empty Items list
+     * (so the auto-opener can skip containers whose contents were already captured).
+     */
+    public boolean hasCapturedItems(Coordinate3D global) {
+        SpecificTag tag = blockEntities.get(global);
+        if (!(tag instanceof CompoundTag)) {
+            return false;
+        }
+        Tag items = ((CompoundTag) tag).get("Items");
+        return items instanceof ListTag && ((ListTag) items).size() > 0;
+    }
+
+    /**
      * Add inventory items to a block entity (e.g. a chest)
      */
     public void addInventory(InventoryWindow window, boolean sendMessages) {
