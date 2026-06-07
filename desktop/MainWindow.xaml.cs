@@ -211,8 +211,13 @@ public partial class MainWindow : Window
 
     private void SetBrush(string key, string hex)
     {
-        if (Resources[key] is SolidColorBrush b)
-            b.Color = (Color)ColorConverter.ConvertFromString(hex);
+        var color = (Color)ColorConverter.ConvertFromString(hex);
+        // brushes are declared po:Freeze="False" so we can recolour them live; if one is ever frozen,
+        // replace it instead of throwing (keeps the window from crashing on launch)
+        if (Resources[key] is SolidColorBrush b && !b.IsFrozen)
+            b.Color = color;
+        else
+            Resources[key] = new SolidColorBrush(color);
     }
 
     private void ApplyTheme(string name)
