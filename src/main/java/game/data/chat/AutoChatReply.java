@@ -252,13 +252,17 @@ public class AutoChatReply {
 
         PacketBuilder packet = new PacketBuilder(packetId);
         packet.writeString(message);
-        packet.writeLong(System.currentTimeMillis());   // timestamp
-        packet.writeLong(0L);                            // salt
-        packet.writeBoolean(false);                      // no signature (unsigned message)
-        packet.writeVarInt(0);                           // acknowledged-messages offset / count
-        packet.writeByteArray(new byte[]{0, 0, 0});      // acknowledged bitset (fixed 20 bits = 3 bytes)
-        if (Config.versionReporter().isAtLeast(Version.V1_21_5)) {
-            packet.writeByte((byte) 0);                  // acknowledgement checksum (added in 1.21.5)
+        // Before 1.19 the serverbound chat packet is just the message string. From 1.19 it carries a
+        // timestamp, salt, optional signature and chat-acknowledgement fields (sent here unsigned).
+        if (Config.versionReporter().isAtLeast(Version.V1_19)) {
+            packet.writeLong(System.currentTimeMillis());   // timestamp
+            packet.writeLong(0L);                            // salt
+            packet.writeBoolean(false);                      // no signature (unsigned message)
+            packet.writeVarInt(0);                           // acknowledged-messages offset / count
+            packet.writeByteArray(new byte[]{0, 0, 0});      // acknowledged bitset (fixed 20 bits = 3 bytes)
+            if (Config.versionReporter().isAtLeast(Version.V1_21_5)) {
+                packet.writeByte((byte) 0);                  // acknowledgement checksum (added in 1.21.5)
+            }
         }
         Config.getServerBoundInjector().enqueuePacket(packet);
         return true;

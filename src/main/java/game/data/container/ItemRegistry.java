@@ -1,6 +1,9 @@
 package game.data.container;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import game.data.chunk.palette.BlockRegistry;
 import game.data.registries.RegistriesJson;
@@ -19,8 +22,24 @@ public class ItemRegistry {
         if (x == null) {
             return null;
         }
-        Gson g = new Gson();
-        return g.fromJson(new InputStreamReader(x), ItemRegistry.class);
+        // The bundled legacy registry is {"items": {"<numeric id>": "<name>"}}; parse it into both maps.
+        // (Deserializing straight into this class would not work: the field names don't match the JSON.)
+        ItemRegistry registry = new ItemRegistry();
+        JsonObject root = JsonParser.parseReader(new InputStreamReader(x)).getAsJsonObject();
+        JsonObject items = root.getAsJsonObject("items");
+        if (items != null) {
+            for (Map.Entry<String, JsonElement> entry : items.entrySet()) {
+                try {
+                    int id = Integer.parseInt(entry.getKey());
+                    String name = entry.getValue().getAsString();
+                    registry.idToName.put(id, name);
+                    registry.nameToId.put(name, id);
+                } catch (NumberFormatException ignored) {
+                    // skip non-numeric keys
+                }
+            }
+        }
+        return registry;
     }
 
     public static ItemRegistry fromRegistry(InputStream input) {

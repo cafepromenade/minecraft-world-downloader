@@ -429,6 +429,23 @@ public class Config {
                     + "folder (outside it, so it persists on the host). Set an absolute path to store it anywhere.")
     public String autoOpenStateFile = "";
 
+    @Option(name = "--auto-open-log",
+            usage = "File to append a human-readable list of items captured by --auto-open-containers. "
+                    + "Default: 'auto-open-items.log' beside the world folder (outside it, so it persists "
+                    + "on the host). Set an absolute path to store it elsewhere.")
+    public String autoOpenLogFile = "";
+
+    @Option(name = "--auto-open-allow-chest-near-players",
+            usage = "By default the auto-open sweep will NOT open a chest or trapped chest while another "
+                    + "player is within --auto-open-player-radius (to avoid opening chests in view of "
+                    + "others). Pass this flag to open them anyway. Only affects chests/trapped chests; "
+                    + "all other container types always auto-open.")
+    public boolean autoOpenAllowChestNearPlayers = false;
+
+    @Option(name = "--auto-open-player-radius",
+            usage = "Radius (blocks) for the chest 'other player nearby' check (default 16).")
+    public double autoOpenPlayerRadius = 16.0;
+
     @Option(name = "--auto-open-gamemodes",
             usage = "Which gamemodes the auto-open sweep runs in: 'all' (default, any mode incl. survival), "
                     + "or a comma list of survival,creative,adventure,spectator. A restricted list only "
@@ -516,6 +533,25 @@ public class Config {
         return instance.worldOutputDir;
     }
 
+    /**
+     * Resolve a file that, by convention, lives BESIDE the world output folder (in its parent dir) so it
+     * persists outside the world data itself (and outside Docker's ephemeral layer). Shared by the
+     * --auto-open-* sidecar files. If {@code customPath} is set it is used verbatim; otherwise
+     * {@code defaultName} is resolved next to the world folder. Returns null if no world dir is set.
+     */
+    public static Path resolveBesideWorldFile(String customPath, String defaultName) {
+        if (customPath != null && !customPath.isEmpty()) {
+            return Paths.get(customPath);
+        }
+        String dir = getWorldOutputDir();
+        if (dir == null || dir.isEmpty()) {
+            return null;
+        }
+        Path world = Paths.get(dir).toAbsolutePath();
+        Path parent = world.getParent();
+        return (parent != null ? parent : world).resolve(defaultName);
+    }
+
     public static boolean isInDevMode() {
         return instance.devMode;
     }
@@ -537,6 +573,13 @@ public class Config {
     public static double autoOpenReach() { return instance.autoOpenReach; }
 
     public static String autoOpenStateFile() { return instance.autoOpenStateFile; }
+
+    public static String autoOpenLogFile() { return instance.autoOpenLogFile; }
+
+    /** Whether to skip auto-opening chests/trapped chests while another player is nearby (default true). */
+    public static boolean autoOpenSkipChestNearPlayers() { return !instance.autoOpenAllowChestNearPlayers; }
+
+    public static double autoOpenPlayerRadius() { return instance.autoOpenPlayerRadius; }
 
     /**
      * Allowed gamemodes for the auto-open sweep, or null for "all gamemodes" (no gate).

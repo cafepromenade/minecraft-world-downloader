@@ -85,6 +85,7 @@ public class WorldManager {
     private ContainerManager containerManager;
     private game.data.container.ContainerAutoOpener containerAutoOpener;
     private game.data.chat.AutoChatReply autoChatReply;
+    private game.data.container.AutoOpenItemLog autoOpenItemLog;
     /** Player gamemode (0 survival, 1 creative, 2 adventure, 3 spectator); -1 until observed. */
     private volatile int playerGamemode = -1;
     private CommandBlockManager commandBlockManager;
@@ -586,6 +587,13 @@ public class WorldManager {
             autoChatReply = new game.data.chat.AutoChatReply();
         }
         return autoChatReply;
+    }
+
+    public game.data.container.AutoOpenItemLog getAutoOpenItemLog() {
+        if (autoOpenItemLog == null) {
+            autoOpenItemLog = new game.data.container.AutoOpenItemLog();
+        }
+        return autoOpenItemLog;
     }
 
     /**

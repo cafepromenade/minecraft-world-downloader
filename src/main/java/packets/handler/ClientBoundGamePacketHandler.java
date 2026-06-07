@@ -87,6 +87,19 @@ public class ClientBoundGamePacketHandler extends PacketHandler {
             return true;
         });
 
+        // Legacy (pre-1.19) chat packet, used for both system and player chat. Content is a JSON string
+        // (first field; a trailing position byte and 1.16+ sender UUID follow but we don't need them).
+        operations.put("Chat", provider -> {
+            if (Config.autoReply()) {
+                try {
+                    worldManager.getAutoChatReply().onComponentJson(provider.readString());
+                } catch (Exception ex) {
+                    // never let chat parsing break the stream or the chat display
+                }
+            }
+            return true;
+        });
+
         operations.put("MoveEntityPos", provider -> {
             entityRegistry.updatePositionRelative(provider);
             return true;

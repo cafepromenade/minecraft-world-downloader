@@ -64,6 +64,14 @@ public class ServerBoundGamePacketHandler extends PacketHandler {
 
         // block placements
         operations.put("UseItemOn", provider -> {
+            // The field order differs before 1.14: pre-1.14 is location, face, hand, cursor x/y/z; from
+            // 1.14 it is hand, location, face, cursor x/y/z, inside-block, [sequence 1.19+]. We only need
+            // the targeted block to associate the next opened container with it.
+            if (!Config.versionReporter().isAtLeast(Version.V1_14)) {
+                Coordinate3D coords = provider.readCoordinates();
+                WorldManager.getInstance().getContainerManager().lastInteractedWith(coords);
+                return true;
+            }
             provider.readVarInt();  // Hand
             Coordinate3D coords = provider.readCoordinates();
             provider.readVarInt();  // Block face

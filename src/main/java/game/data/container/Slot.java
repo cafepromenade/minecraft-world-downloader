@@ -31,6 +31,19 @@ public class Slot {
             '}';
     }
 
+    public int getCount() {
+        return count;
+    }
+
+    public int getItemId() {
+        return itemId;
+    }
+
+    /** Registry name of the item (e.g. "minecraft:diamond"), or null if the id is unknown. */
+    public String getItemName() {
+        return RegistryManager.getInstance().getItemRegistry().getItemName(itemId);
+    }
+
     public CompoundTag toNbt() {
         CompoundTag tag = new CompoundTag();
         tag.add("id", new StringTag(RegistryManager.getInstance().getItemRegistry().getItemName(itemId)));

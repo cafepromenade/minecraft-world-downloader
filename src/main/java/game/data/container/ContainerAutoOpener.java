@@ -1,6 +1,7 @@
 package game.data.container;
 
 import config.Config;
+import config.Version;
 import game.data.WorldManager;
 import game.data.coordinates.Coordinate3D;
 import game.protocol.Protocol;
@@ -63,6 +64,39 @@ public class ContainerAutoOpener {
     /** Latest block-interaction sequence seen from the real client; reused so we never get ahead of it. */
     private volatile int lastSequence = 0;
 
+    /**
+     * Whether opening this position must be skipped because it is a chest/trapped chest and another
+     * player is within the configured radius. Enabled by default; only applies to (trapped) chests so
+     * every other container type still auto-opens. The block is NOT marked attempted, so it will be
+     * opened later once no player is nearby. Excludes the downloading player (other players only appear
+     * here as tracked entities).
+     */
+    private boolean blockedByNearbyPlayer(Coordinate3D pos) {
+        if (!Config.autoOpenSkipChestNearPlayers()) {
+            return false;
+        }
+        game.data.chunk.palette.BlockState bs = WorldManager.getInstance().blockStateAt(pos);
+        String name = bs == null ? null : bs.getName();
+        if (!"minecraft:chest".equals(name) && !"minecraft:trapped_chest".equals(name)) {
+            return false;
+        }
+        double r = Config.autoOpenPlayerRadius();
+        double rSq = r * r;
+        for (game.data.entity.PlayerEntity player : WorldManager.getInstance().getEntityRegistry().getPlayerSet()) {
+            game.data.coordinates.CoordinateDouble3D pp = player.getPosition();
+            if (pp == null) {
+                continue;
+            }
+            double dx = pp.getX() - (pos.getX() + 0.5);
+            double dy = pp.getY() - (pos.getY() + 0.5);
+            double dz = pp.getZ() - (pos.getZ() + 0.5);
+            if (dx * dx + dy * dy + dz * dz <= rSq) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isOpenable(String blockName) {
         return blockName != null && (OPENABLE.contains(blockName) || blockName.endsWith("_shulker_box"));
     }
@@ -87,17 +121,8 @@ public class ContainerAutoOpener {
                 // Where to persist the "already opened" set. Default: a file BESIDE the world folder
                 // (its parent dir) rather than inside it — that parent is the bind-mounted host dir, so
                 // the state lives outside Docker's ephemeral layer and outside the world data itself.
-                String custom = Config.autoOpenStateFile();
-                if (custom != null && !custom.isEmpty()) {
-                    persistFile = java.nio.file.Paths.get(custom);
-                } else {
-                    String dir = Config.getWorldOutputDir();
-                    if (dir != null && !dir.isEmpty()) {
-                        java.nio.file.Path world = java.nio.file.Paths.get(dir).toAbsolutePath();
-                        java.nio.file.Path parent = world.getParent();
-                        persistFile = (parent != null ? parent : world).resolve("auto-open-attempted.txt");
-                    }
-                }
+                persistFile = Config.resolveBesideWorldFile(
+                        Config.autoOpenStateFile(), "auto-open-attempted.txt");
                 if (persistFile != null && java.nio.file.Files.exists(persistFile)) {
                     for (String line : java.nio.file.Files.readAllLines(persistFile)) {
                         String[] p = line.trim().split("\\s+");
@@ -187,7 +212,8 @@ public class ContainerAutoOpener {
         }
 
         Coordinate3D target = WorldManager.getInstance()
-                .findOpenableContainerNear(playerPos, Config.autoOpenReach(), pos -> attempted.contains(keyOf(pos)));
+                .findOpenableContainerNear(playerPos, Config.autoOpenReach(),
+                        pos -> attempted.contains(keyOf(pos)) || blockedByNearbyPlayer(pos));
         if (target == null) {
             return;
         }
@@ -218,20 +244,42 @@ public class ContainerAutoOpener {
         if (packetId < 0 || Config.getServerBoundInjector() == null) {
             return;
         }
-        // Mirror DataTypeProvider.readCoordinates(): x<<38 | y<<26 | z.
-        long packed = ((long) (pos.getX() & 0x3FFFFFF) << 38)
-                | ((long) (pos.getY() & 0xFFF) << 26)
-                | ((long) (pos.getZ() & 0x3FFFFFF));
+        // The on-wire block-position encoding changed in 1.14: pre-1.14 packs x<<38 | y<<26 | z, while
+        // 1.14+ packs x<<38 | z<<12 | y. We must match the SERVER's encoding for the version, otherwise
+        // the server decodes a garbage position and silently never opens the container.
+        long packed;
+        if (Config.versionReporter().isAtLeast(Version.V1_14)) {
+            packed = ((long) (pos.getX() & 0x3FFFFFF) << 38)
+                    | ((long) (pos.getZ() & 0x3FFFFFF) << 12)
+                    | ((long) (pos.getY() & 0xFFF));
+        } else {
+            packed = ((long) (pos.getX() & 0x3FFFFFF) << 38)
+                    | ((long) (pos.getY() & 0xFFF) << 26)
+                    | ((long) (pos.getZ() & 0x3FFFFFF));
+        }
 
         PacketBuilder packet = new PacketBuilder(packetId);
-        packet.writeVarInt(0);          // hand: main
-        packet.writeLong(packed);       // target block position
-        packet.writeVarInt(1);          // face: top
-        packet.writeFloat(0.5f);        // cursor x
-        packet.writeFloat(0.5f);        // cursor y
-        packet.writeFloat(0.5f);        // cursor z
-        packet.writeBoolean(false);     // head inside block
-        packet.writeVarInt(lastSequence); // block-change sequence (MC 1.19+)
+        if (Config.versionReporter().isAtLeast(Version.V1_14)) {
+            // 1.14+ "Use Item On": hand, location, face, cursor x/y/z, inside-block, [sequence 1.19+].
+            packet.writeVarInt(0);              // hand: main
+            packet.writeLong(packed);          // target block position
+            packet.writeVarInt(1);             // face: top
+            packet.writeFloat(0.5f);           // cursor x
+            packet.writeFloat(0.5f);           // cursor y
+            packet.writeFloat(0.5f);           // cursor z
+            packet.writeBoolean(false);        // head inside block
+            if (Config.versionReporter().isAtLeast(Version.V1_19)) {
+                packet.writeVarInt(lastSequence); // block-change sequence (MC 1.19+)
+            }
+        } else {
+            // pre-1.14 "Player Block Placement" (1.11-1.13.2): location, face, hand, cursor x/y/z.
+            packet.writeLong(packed);          // target block position
+            packet.writeVarInt(1);             // face: top
+            packet.writeVarInt(0);             // hand: main
+            packet.writeFloat(0.5f);           // cursor x
+            packet.writeFloat(0.5f);           // cursor y
+            packet.writeFloat(0.5f);           // cursor z
+        }
         Config.getServerBoundInjector().enqueuePacket(packet);
         // The per-container action-bar line is shown on capture (with the item count), in
         // ContainerManager#sendInventorySavedMessage, formatted as "<type> - (<items>) <x> <y> <z>".

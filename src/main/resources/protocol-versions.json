@@ -28,6 +28,7 @@
 				"0x3F": "CustomPayload"
 			},
 			"serverBound": {
+				"0x01": "ChatMessage",
 				"0x04": "MovePlayerPos",
 				"0x06": "MovePlayerPosRot",
 				"0x05": "MovePlayerRot",
@@ -63,6 +64,7 @@
 				"0x18": "CustomPayload"
 			},
 			"serverBound": {
+				"0x02": "ChatMessage",
 				"0x0C": "MovePlayerPos",
 				"0x0D": "MovePlayerPosRot",
 				"0x0E": "MovePlayerRot",
@@ -99,6 +101,7 @@
 				"0x18": "CustomPayload"
 			},
 			"serverBound": {
+				"0x02": "ChatMessage",
 				"0x0C": "MovePlayerPos",
 				"0x0D": "MovePlayerPosRot",
 				"0x0E": "MovePlayerRot",
@@ -135,6 +138,7 @@
 				"0x18": "CustomPayload"
 			},
 			"serverBound": {
+				"0x02": "ChatMessage",
 				"0x0C": "MovePlayerPos",
 				"0x0D": "MovePlayerPosRot",
 				"0x0E": "MovePlayerRot",
@@ -171,11 +175,13 @@
 				"0x18": "CustomPayload"
 			},
 			"serverBound": {
+				"0x02": "ChatMessage",
 				"0x0D": "MovePlayerPos",
 				"0x0E": "MovePlayerPosRot",
 				"0x0F": "MovePlayerRot",
 				"0x10": "MoveVehicle",
-				"0x1F": "UseItem",
+				"0x1F": "UseItemOn",
+				"0x20": "UseItem",
 				"0x08": "ContainerClose"
 			}
 		},
@@ -196,6 +202,7 @@
 				"0x0E": "Chat"
 			},
 			"serverBound": {
+				"0x02": "ChatMessage",
 				"0x10": "MovePlayerPos",
 				"0x11": "MovePlayerPosRot",
 				"0x12": "MovePlayerRot",
@@ -232,6 +239,7 @@
 				"0x37": "RemoveEntities"
 			},
 			"serverBound": {
+				"0x03": "ChatMessage",
 				"0x11": "MovePlayerPos",
 				"0x12": "MovePlayerPosRot",
 				"0x13": "MovePlayerRot",
@@ -269,6 +277,7 @@
 				"0x38": "RemoveEntities"
 			},
 			"serverBound": {
+				"0x03": "ChatMessage",
 				"0x11": "MovePlayerPos",
 				"0x12": "MovePlayerPosRot",
 				"0x13": "MovePlayerRot",
@@ -306,6 +315,7 @@
 				"0x36": "RemoveEntities"
 			},
 			"serverBound": {
+				"0x03": "ChatMessage",
 				"0x12": "MovePlayerPos",
 				"0x13": "MovePlayerPosRot",
 				"0x14": "MovePlayerRot",
@@ -342,6 +352,7 @@
 				"0x61": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x03": "ChatMessage",
 				"0x09": "ContainerClose",
 				"0x11": "MovePlayerPos",
 				"0x12": "MovePlayerPosRot",
@@ -380,6 +391,7 @@
 				"0x62": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x03": "ChatMessage",
 				"0x09": "ContainerClose",
 				"0x0d": "Interact",
 				"0x11": "MovePlayerPos",

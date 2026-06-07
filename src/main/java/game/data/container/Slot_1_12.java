@@ -13,6 +13,10 @@ public class Slot_1_12 extends Slot {
         this.damage = damage;
     }
 
+    public int getDamage() {
+        return damage;
+    }
+
     @Override
     public String toString() {
         return "Slot_1_12{" +

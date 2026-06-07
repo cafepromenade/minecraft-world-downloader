@@ -130,15 +130,7 @@ public class ContainerManager {
         }
 
         // Container type from the block at the captured location (e.g. "chest", "barrel", "hopper").
-        String type = "container";
-        Chunk c = WorldManager.getInstance().getChunk(
-                pos.globalToChunk().addDimension(WorldManager.getInstance().getDimension()));
-        if (c != null) {
-            BlockState bs = c.getBlockStateAt(pos.withinChunk());
-            if (bs != null && bs.getName() != null) {
-                type = bs.getName().replace("minecraft:", "");
-            }
-        }
+        String type = resolveContainerType(pos);
 
         // Message text is NOT hardcoded: it comes from a configurable template (--container-message-format)
         // with {type} {count} {x} {y} {z} placeholders, so each deployment can choose its own format.
@@ -153,6 +145,19 @@ public class ContainerManager {
         message.setColor("green");
         // Show only on the action bar (above the hotbar), not in the chat box.
         Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
+    }
+
+    /** Resolve the container type name (e.g. "chest", "barrel") from the block at the given position. */
+    private String resolveContainerType(Coordinate3D pos) {
+        Chunk c = WorldManager.getInstance().getChunk(
+                pos.globalToChunk().addDimension(WorldManager.getInstance().getDimension()));
+        if (c != null) {
+            BlockState bs = c.getBlockStateAt(pos.withinChunk());
+            if (bs != null && bs.getName() != null) {
+                return bs.getName().replace("minecraft:", "");
+            }
+        }
+        return "container";
     }
 
 
@@ -231,6 +236,18 @@ public class ContainerManager {
                 if (opener.isWaiting()) {
                     try {
                         closeWindow(windowId);
+                        // Saved OK — record what we just captured (auto-open only). Uses the retained
+                        // `window` reference since closeWindow has removed it from knownWindows. Kept in
+                        // its own try so a logging failure is never reported as a save failure, and never
+                        // stalls the sweep.
+                        try {
+                            WorldManager.getInstance().getAutoOpenItemLog().log(
+                                    window, resolveContainerType(window.getContainerLocation()),
+                                    WorldManager.getInstance().getDimension());
+                        } catch (RuntimeException logEx) {
+                            System.out.println("auto-open: failed to log items for container " + windowId
+                                    + ": " + logEx.getMessage());
+                        }
                     } catch (RuntimeException ex) {
                         // A failure to save one container must not silently lose it AND stall the sweep:
                         // DataReader swallows handler throwables, so without this catch the auto-opener
