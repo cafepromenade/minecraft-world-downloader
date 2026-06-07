@@ -29,10 +29,26 @@ publish/
 
 .tmp_build/
 
-# scrubbed: local analysis artifacts (do not commit)
+# Local analysis / debugging artifacts (do not commit)
 saved_items_report.txt
 lock_report.txt
 scan_saved_items.py
 scan_locks.py
 scan_area.py
 check_locksigns.py
+
+# Ad-hoc region/entity inspection scripts and their generated reports
+inspect_region.py
+inspect_all.py
+inspect_entities.py
+dump_names.py
+search_named.py
+containers_now.txt
+entities_report.txt
+
+# One-off session status/report dumps
+DEPLOYMENT_READY.txt
+FINAL_COMPLETION_REPORT.txt
+FINAL_TEST_REPORT.txt
+GITHUB_ACTIONS_SUMMARY.txt
+TEST_RESULTS.txt
