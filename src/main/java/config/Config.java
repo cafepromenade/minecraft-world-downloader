@@ -323,6 +323,11 @@ public class Config {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        // Pre-scan mod JARs in the background so modded block texture colors are ready when chunks arrive.
+        if (moddedBlockColors()) {
+            game.data.chunk.palette.ModdedBlockColorExtractor.getInstance().preloadAsync();
+        }
     }
 
     private boolean writeChunks() {
@@ -409,6 +414,11 @@ public class Config {
     @Option(name = "--disable-chunk-saving",
             usage = "Disable writing chunks to disk, mostly for debugging purposes.")
     public  boolean disableWriteChunks = false;
+
+    @Option(name = "--modded-block-colors",
+            usage = "Render modded (non-minecraft:) blocks on the map by extracting texture colors from "
+                    + "mod JARs in .minecraft/mods, falling back to a deterministic per-name color.")
+    public boolean moddedBlockColors = true;
 
     @Option(name = "--auto-open-containers",
             usage = "EXPERIMENTAL: automatically open nearby containers (within reach, one at a time, "
@@ -574,6 +584,8 @@ public class Config {
     }
 
     public static boolean renderOtherPlayers() { return instance.renderOtherPlayers; }
+
+    public static boolean moddedBlockColors() { return instance.moddedBlockColors; }
 
     public static boolean autoOpenContainers() { return instance.autoOpenContainers; }
 

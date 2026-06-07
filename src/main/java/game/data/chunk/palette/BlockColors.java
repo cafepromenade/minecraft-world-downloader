@@ -47,19 +47,27 @@ public class BlockColors {
 
         // handle stairs & slabs, the original block can have various different name structures
         String suffix = key.endsWith("_slab") ? "_slab" : key.endsWith("_stairs") ? "_stairs" : null;
-        if (suffix == null) { return SimpleColor.BLACK; }
+        if (suffix != null) {
+            col = colors.get(key.replace(suffix, ""));
+            if (col != null) { return col; }
 
-        col = colors.get(key.replace(suffix, ""));
-        if (col != null) { return col; }
+            col = colors.get(key.replace(suffix, "_block"));
+            if (col != null) { return col; }
 
-        col = colors.get(key.replace(suffix, "_block"));
-        if (col != null) { return col; }
+            col = colors.get(key.replace(suffix, "_planks"));
+            if (col != null) { return col; }
 
-        col = colors.get(key.replace(suffix, "_planks"));
-        if (col != null) { return col; }
+            col = colors.get(key.replace(suffix, "s"));
+            if (col != null) { return col; }
+        }
 
-        col = colors.get(key.replace(suffix, "s"));
-        if (col != null) { return col; }
+        // Modded (non-minecraft) blocks not in the vanilla palette: generate a color (from the mod
+        // JAR's texture, else a deterministic per-name color) so they appear on the map. Vanilla
+        // blocks missing from the palette stay transparent (BLACK) so the surface scanner sees through.
+        if (Config.moddedBlockColors() && key.contains(":")
+                && !key.startsWith("minecraft:") && !key.endsWith("air")) {
+            return ModdedBlockColorExtractor.getInstance().getColor(key);
+        }
 
         return SimpleColor.BLACK;
     }

@@ -60,6 +60,10 @@ public class SimpleColor {
         );
     }
 
+    public double getR() { return r; }
+    public double getG() { return g; }
+    public double getB() { return b; }
+
     public int toARGB() {
         int res = 0xFF000000;
         res |= toInt(r) << 16;

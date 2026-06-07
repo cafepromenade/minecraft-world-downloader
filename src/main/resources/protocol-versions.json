@@ -658,6 +658,7 @@
 			"version": "1.20.6",
 			"dataVersion": 3839,
 			"clientBound": {
+				"0x19": "CustomPayload",
 				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",
@@ -704,6 +705,7 @@
 			"version": "1.21",
 			"dataVersion": 3953,
 			"clientBound": {
+				"0x19": "CustomPayload",
 				"0x22": "GameEvent",
 				"0x01": "AddEntity",
 				"0x07": "BlockEntityData",

@@ -24,5 +24,13 @@ public abstract class PluginChannelHandler {
 
 class DefaultPluginChannelHandler extends PluginChannelHandler {
     @Override
-    public void handleCustomPayload(DataTypeProvider provider) { }
+    public void handleCustomPayload(DataTypeProvider provider) {
+        // 1.13+ namespaced channel (e.g. "forge:handshake", "fml:handshake", "neoforge:..."). We only
+        // consume the channel id; reading it keeps the stream aligned and lets modern plugin channels
+        // (Forge/NeoForge on 1.20.6/1.21) be observed by subclasses/hooks (e.g. voice-chat detection).
+        try {
+            provider.readString();
+        } catch (Exception ignored) {
+        }
+    }
 }
