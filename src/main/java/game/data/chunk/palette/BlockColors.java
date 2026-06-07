@@ -61,6 +61,25 @@ public class BlockColors {
             if (col != null) { return col; }
         }
 
+        // handle walls / fences / fence gates: inherit the colour of the base material so they
+        // don't render transparent (e.g. brick_wall -> bricks, oak_fence / oak_fence_gate -> oak_planks)
+        String inherit = key.endsWith("_fence_gate") ? "_fence_gate"
+                : key.endsWith("_fence") ? "_fence"
+                : key.endsWith("_wall") ? "_wall" : null;
+        if (inherit != null) {
+            col = colors.get(key.replace(inherit, ""));
+            if (col != null) { return col; }
+
+            col = colors.get(key.replace(inherit, "s"));        // brick_wall -> bricks
+            if (col != null) { return col; }
+
+            col = colors.get(key.replace(inherit, "_planks"));  // oak_fence -> oak_planks
+            if (col != null) { return col; }
+
+            col = colors.get(key.replace(inherit, "_block"));
+            if (col != null) { return col; }
+        }
+
         // Modded (non-minecraft) blocks not in the vanilla palette: generate a color (from the mod
         // JAR's texture, else a deterministic per-name color) so they appear on the map. Vanilla
         // blocks missing from the palette stay transparent (BLACK) so the surface scanner sees through.
