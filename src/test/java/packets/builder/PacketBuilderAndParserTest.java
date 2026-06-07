@@ -99,6 +99,18 @@ public class PacketBuilderAndParserTest {
     }
 
     @Test
+    void stringUtf8Test() {
+        // Multi-byte UTF-8: accents, section sign (color codes), CJK and an emoji. The old reader
+        // appended each byte as a code point (Latin-1) and turned these into mojibake.
+        String before = "Café ñ §6日本語 🧱 box";
+        builder.writeString(before);
+
+        String after = getParser().readString();
+
+        assertThat(after).isEqualTo(before);
+    }
+
+    @Test
     void shortTest() {
         int before = 42;
         builder.writeShort(before);
@@ -173,6 +185,39 @@ public class PacketBuilderAndParserTest {
         long after = getParser().readLong();
 
         assertThat(after).isEqualTo(before);
+    }
+
+    @Test
+    void varLongLarge() {
+        // Needs >5 bytes, with bits above position 32. The old reader shifted an int, wrapping at
+        // 32 bits and corrupting the high bits.
+        long before = 1234567890123456789L;
+        parser = new DataTypeProvider(encodeVarLong(before));
+
+        assertThat(parser.readVarLong()).isEqualTo(before);
+    }
+
+    @Test
+    void varLongNegative() {
+        // Negative VarLongs are sign-extended to the full 10 bytes; the high bits must survive.
+        long before = -42L;
+        parser = new DataTypeProvider(encodeVarLong(before));
+
+        assertThat(parser.readVarLong()).isEqualTo(before);
+    }
+
+    /** Standard Minecraft VarLong encoding (7-bit groups, MSB continuation), used to feed readVarLong. */
+    private static byte[] encodeVarLong(long value) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        do {
+            byte temp = (byte) (value & 0b01111111);
+            value >>>= 7;
+            if (value != 0) {
+                temp |= (byte) 0b10000000;
+            }
+            out.write(temp);
+        } while (value != 0);
+        return out.toByteArray();
     }
 
     @Test

@@ -20,6 +20,7 @@ import java.io.DataInputStream;
 import java.io.InputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -79,7 +80,8 @@ public class DataTypeProvider {
             }
             read = readNext();
             int value = (read & 0b01111111);
-            result |= (value << (7 * numRead));
+            // cast to long before shifting: an int shift wraps at 32 bits and corrupts VarLongs > 5 bytes
+            result |= ((long) value << (7 * numRead));
 
             numRead++;
             if (numRead > 10) {
@@ -122,11 +124,9 @@ public class DataTypeProvider {
     public String readString() {
         int stringSize = readVarInt();
 
-        StringBuilder sb = new StringBuilder();
-        while (stringSize-- > 0) {
-            sb.appendCodePoint(readNext() & 0xFF);
-        }
-        return sb.toString();
+        // Protocol strings are length-prefixed UTF-8 byte counts. Reading each byte as a code point
+        // treats them as Latin-1 and mangles any multi-byte UTF-8 (Unicode names, chat, sign/NBT text).
+        return new String(readByteArray(stringSize), StandardCharsets.UTF_8);
     }
 
     public int readVarInt() {
