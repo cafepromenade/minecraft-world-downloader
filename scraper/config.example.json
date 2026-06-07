@@ -14,11 +14,21 @@
   "chunkStep": 1,
 
   "flyWhenAble": true,
+  "preferFly": false,
   "walkWhenGrounded": true,
   "flyAltitude": 120,
   "arriveRadius": 6,
   "waypointTimeoutMs": 20000,
   "loadWaitMs": 600,
+
+  "containerDwellMs": 0,
+  "finalDrainMs": 6000,
+
+  "loginPassword": "",
+  "autoLogin": false,
+
+  "stuckCheckMs": 4000,
+  "stuckEpsilon": 1.5,
 
   "visitedFile": "visited.json",
   "revisit": false,

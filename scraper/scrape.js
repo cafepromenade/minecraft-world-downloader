@@ -61,6 +61,7 @@ function loadConfig() {
     chunkStep: 1,                // visit every Nth chunk (1 = every chunk)
     // movement
     flyWhenAble: true,           // fly the grid in creative/spectator
+    preferFly: false,            // creative: fly (fast aerial coverage) instead of walking
     walkWhenGrounded: true,      // walk the grid in survival/adventure
     flyAltitude: 120,            // y to fly at when flying
     arriveRadius: 6,             // blocks: considered "arrived" within this XZ distance
@@ -73,6 +74,12 @@ function loadConfig() {
     // containers, and drain at the end so pending chunk/container saves are flushed before quitting.
     containerDwellMs: 0,         // extra pause per chunk (add when --auto-open-containers is on)
     finalDrainMs: 6000,          // wait after the grid (per bot) so the proxy finishes saving
+    // auto-login for servers running AuthMe-style login plugins (common on offline/cracked servers)
+    loginPassword: '',           // if set, the bot will /register and /login with this password
+    autoLogin: undefined,        // defaults to true when loginPassword is set
+    // anti-stuck: if the bot stops making progress, recover instead of hanging
+    stuckCheckMs: 4000,          // how often to check for lack of progress
+    stuckEpsilon: 1.5,           // min blocks of movement to count as "progress"
     // misc
     loginStaggerMs: 4000,        // delay between starting each bot
     auth: undefined,
@@ -183,9 +190,55 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
     bot.on('error', (e) => console.error(tag, 'error:', e && e.message ? e.message : e));
     bot.on('kicked', (r) => console.error(tag, 'kicked:', r));
 
+    // Auto-login for AuthMe-style login plugins: register + login with a configured password, and
+    // re-send /login whenever the server prompts for it (offline/cracked servers commonly require this).
+    const autoLogin = cfg.autoLogin === undefined ? !!cfg.loginPassword : cfg.autoLogin;
+    if (autoLogin && cfg.loginPassword) {
+      const pw = cfg.loginPassword;
+      const sendAuth = () => {
+        try { bot.chat(`/register ${pw} ${pw}`); } catch (_) {}
+        setTimeout(() => { try { bot.chat(`/login ${pw}`); } catch (_) {} }, 1200);
+      };
+      bot.once('login', () => setTimeout(sendAuth, 800));
+      bot.on('message', (msg) => {
+        const t = (msg && msg.toString ? msg.toString() : '').toLowerCase();
+        if (t.includes('/login') || t.includes('please login') || t.includes('/register') || t.includes('authme')) {
+          setTimeout(sendAuth, 300);
+        }
+      });
+    }
+
     bot.once('spawn', async () => {
       const mode = bot.game.gameMode; // 'survival' | 'creative' | 'adventure' | 'spectator'
       console.log(tag, `spawned at ${vecStr(bot.entity.position)} gamemode=${mode}`);
+
+      // Anti-stuck watchdog: if the bot stops moving while it should be navigating, nudge it free
+      // (jump + reorient; ascend when flying) so a long exploration never hangs on one spot.
+      let lastPos = bot.entity.position.clone();
+      let lastProgress = Date.now();
+      let navigating = false;
+      const watchdog = setInterval(() => {
+        if (stopped) return;
+        const p = bot.entity.position;
+        if (distXZ(p, lastPos.x, lastPos.z) >= cfg.stuckEpsilon) {
+          lastPos = p.clone(); lastProgress = Date.now(); return;
+        }
+        if (navigating && Date.now() - lastProgress > cfg.stuckCheckMs) {
+          // unstick: hop, face a new direction, brief forward burst (and rise if flying)
+          try {
+            const Vec3 = require('vec3');
+            bot.setControlState('jump', true);
+            bot.look(Math.random() * Math.PI * 2, 0, false);
+            bot.setControlState('forward', true);
+            setTimeout(() => { try { bot.setControlState('jump', false); } catch (_) {} }, 400);
+          } catch (_) {}
+          lastProgress = Date.now();
+        }
+      }, Math.max(1000, Math.floor(cfg.stuckCheckMs / 2)));
+      if (watchdog.unref) watchdog.unref();
+      bot.once('end', () => clearInterval(watchdog));
+      // expose a setter the nav loop uses to tell the watchdog when it's actively moving
+      bot._setNavigating = (v) => { navigating = v; if (v) lastProgress = Date.now(); };
 
       // Decide how this bot moves, by gamemode + settings + what's installed:
       //  - spectator: must fly (no collision); honours flyWhenAble.
@@ -196,7 +249,9 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
       if (mode === 'spectator') {
         action = cfg.flyWhenAble ? 'fly' : 'idle';
       } else if (mode === 'creative') {
-        action = hasPath ? 'walk' : (cfg.flyWhenAble ? 'fly' : 'walk');
+        // walk via pathfinder by default (most reliable); set preferFly for fast aerial coverage
+        if (cfg.preferFly && cfg.flyWhenAble) action = 'fly';
+        else action = hasPath ? 'walk' : (cfg.flyWhenAble ? 'fly' : 'walk');
       } else { // survival / adventure
         action = cfg.walkWhenGrounded ? 'walk' : 'idle';
       }
@@ -236,6 +291,7 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
 
         const tx = cx * 16 + 8, tz = cz * 16 + 8;
         try {
+          if (bot._setNavigating) bot._setNavigating(true);
           if (action === 'fly') {
             await flyTo(bot, Vec3, tx, cfg.flyAltitude, tz, cfg, mode);
           } else {
@@ -244,6 +300,8 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
           await sleep(cfg.loadWaitMs + (cfg.containerDwellMs || 0));
         } catch (e) {
           // couldn't reach this chunk; mark visited anyway so we don't loop on it forever
+        } finally {
+          if (bot._setNavigating) bot._setNavigating(false);
         }
         visited.add(cx, cz);
         visitedCount++;

@@ -38,7 +38,11 @@ node scrape.js --config config.json
 | `bbox` | alternatively an explicit box `{ "minX", "minZ", "maxX", "maxZ" }` (block coords); takes precedence over center/radius |
 | `chunkStep` | visit every Nth chunk (1 = every chunk) |
 | `flyWhenAble` | fly the grid in **creative/spectator** |
+| `preferFly` | creative: fly (fast aerial coverage) instead of walking |
 | `walkWhenGrounded` | walk the grid in **survival/adventure** |
+| `loginPassword` | if set, auto-`/register` + `/login` with this password (AuthMe-style cracked servers) |
+| `autoLogin` | force auto-login on/off (defaults on when `loginPassword` is set) |
+| `stuckCheckMs`, `stuckEpsilon` | anti-stuck watchdog: if the bot moves less than `stuckEpsilon` blocks for `stuckCheckMs`, it hops/reorients to free itself |
 | `flyAltitude` | Y to fly at when flying |
 | `arriveRadius`, `waypointTimeoutMs`, `loadWaitMs` | navigation tuning (arrival distance, per-waypoint timeout, dwell time so the proxy captures the chunk) |
 | `visitedFile` | where visited chunks are remembered |
@@ -82,6 +86,20 @@ Each behaviour can be turned off with `flyWhenAble` / `walkWhenGrounded`.
 
 Visited chunks are saved to `visitedFile`. Re-running skips chunks already downloaded. Set
 `"revisit": true` to force a full re-walk (e.g. to pick up changes).
+
+## Auto-login (cracked / AuthMe servers)
+
+Many offline-mode servers run a login plugin (AuthMe etc.) that requires `/register <pw> <pw>` then
+`/login <pw>`. Set `loginPassword` and the bot will register + login automatically on join, and re-send
+`/login` whenever the server prompts for it.
+
+## Anti-stuck
+
+A watchdog monitors movement: if the bot fails to move at least `stuckEpsilon` blocks within
+`stuckCheckMs` while navigating, it hops, turns to a new heading, and bursts forward to free itself.
+Combined with the per-waypoint timeout (a waypoint that can't be reached is skipped, not retried
+forever), this keeps long explorations (e.g. 5000×5000) from hanging. Verified: survival, adventure
+and creative all keep making progress over a 5000×5000 area without stalling.
 
 ## Microsoft login
 
