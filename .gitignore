@@ -28,3 +28,11 @@ publish/
 *.user
 
 .tmp_build/
+
+# scrubbed: local analysis artifacts (do not commit)
+saved_items_report.txt
+lock_report.txt
+scan_saved_items.py
+scan_locks.py
+scan_area.py
+check_locksigns.py
