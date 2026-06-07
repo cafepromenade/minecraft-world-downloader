@@ -407,6 +407,15 @@ public class Config {
             usage = "Disable the GUI")
     public transient boolean disableGui = false;
 
+    @Option(name = "--render-map",
+            usage = "Render the overview map to PNG region tiles under <output>/overview so the web "
+                    + "console can display a live map. Enabled automatically in --no-gui mode.")
+    public boolean renderMap = false;
+
+    @Option(name = "--disable-map-render",
+            usage = "Do not render the overview map to disk, even when running headless (--no-gui).")
+    public boolean disableMapRender = false;
+
     @Option(name = "--mark-new-chunks",
             usage = "Mark new chunks in an orange outline.")
     public transient boolean markNewChunks = false;
@@ -556,6 +565,15 @@ public class Config {
 
     public static String getWorldOutputDir() {
         return instance.worldOutputDir;
+    }
+
+    /**
+     * Whether to render the overview map to PNG tiles on disk (for the web console). On by default in
+     * headless mode (--no-gui), or when forced with --render-map; can be turned off with
+     * --disable-map-render.
+     */
+    public static boolean renderOverviewMap() {
+        return (instance.renderMap || instance.disableGui) && !instance.disableMapRender;
     }
 
     /**

@@ -23,6 +23,7 @@ public class ChunkImageFactory {
     private final Runnable requestImage = this::requestImage;
     ;
     private BiConsumer<Map<ImageMode, Image>, Boolean> onImageDone;
+    private BiConsumer<Map<ImageMode, int[]>, Boolean> onPixelsDone;
     private Runnable onSaved;
 
     private final Chunk c;
@@ -51,6 +52,15 @@ public class ChunkImageFactory {
      */
     public void onComplete(BiConsumer<Map<ImageMode, Image>, Boolean> onComplete) {
         this.onImageDone = onComplete;
+    }
+
+    /**
+     * Register a consumer for the raw ARGB pixels (16x16 per {@link ImageMode}). Unlike
+     * {@link #onComplete}, this never touches JavaFX, so the headless overview renderer can use it
+     * in --no-gui / Docker runs where the JavaFX toolkit is not started.
+     */
+    public void onPixels(BiConsumer<Map<ImageMode, int[]>, Boolean> onPixels) {
+        this.onPixelsDone = onPixels;
     }
 
     public void onSaved(Runnable onSaved) {
@@ -162,25 +172,35 @@ public class ChunkImageFactory {
     }
 
 
-    private Image createImage(boolean isSurface) {
-        WritableImage i = new WritableImage(Chunk.SECTION_WIDTH, Chunk.SECTION_WIDTH);
+    /**
+     * Compute the 16x16 ARGB pixels of this chunk's overview. Pure Java (no JavaFX), so it is safe to
+     * call in headless mode. Shared by the JavaFX {@link #createImage} and the headless overview map.
+     */
+    public int[] computeArgb(boolean isSurface) {
         int[] output = new int[Chunk.SECTION_WIDTH * Chunk.SECTION_WIDTH];
-        WritablePixelFormat<IntBuffer> format = WritablePixelFormat.getIntArgbInstance();
 
         // setup north/south chunks
         setupAdjacentChunks();
         drawnBefore = true;
 
         boolean isNether = c.getDimension().isNether();
-        try {
-            for (int x = 0; x < Chunk.SECTION_WIDTH; x++) {
-                for (int z = 0; z < Chunk.SECTION_WIDTH; z++) {
+        for (int x = 0; x < Chunk.SECTION_WIDTH; x++) {
+            for (int z = 0; z < Chunk.SECTION_WIDTH; z++) {
 
-                    SimpleColor color = isSurface ? getColorSurface(x, z, false) : isNether ? getColorSurface(x, z, true) : getColorCave(x, z);
+                SimpleColor color = isSurface ? getColorSurface(x, z, false) : isNether ? getColorSurface(x, z, true) : getColorCave(x, z);
 
-                    output[x + Chunk.SECTION_WIDTH * z] = color.toARGB();
-                }
+                output[x + Chunk.SECTION_WIDTH * z] = color.toARGB();
             }
+        }
+        return output;
+    }
+
+    private Image createImage(boolean isSurface) {
+        WritableImage i = new WritableImage(Chunk.SECTION_WIDTH, Chunk.SECTION_WIDTH);
+        WritablePixelFormat<IntBuffer> format = WritablePixelFormat.getIntArgbInstance();
+
+        try {
+            int[] output = computeArgb(isSurface);
             i.getPixelWriter().setPixels(
                 0, 0,
                 Chunk.SECTION_WIDTH, Chunk.SECTION_WIDTH,
@@ -207,6 +227,13 @@ public class ChunkImageFactory {
                 ImageMode.CAVES, createImage(false)
             );
             this.onImageDone.accept(map, c.isSaved());
+        }
+        if (this.onPixelsDone != null) {
+            Map<ImageMode, int[]> map = Map.of(
+                ImageMode.NORMAL, computeArgb(true),
+                ImageMode.CAVES, computeArgb(false)
+            );
+            this.onPixelsDone.accept(map, c.isSaved());
         }
         clearAdjacentChunks();
     }

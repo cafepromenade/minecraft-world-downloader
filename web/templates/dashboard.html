@@ -12,6 +12,7 @@
     <div class="topbar-right">
         <span id="statusBadge" class="badge stopped"><span class="dot"></span>stopped</span>
         <span class="muted" id="uptime"></span>
+        <a class="btn small" href="{{ url_for('map_view') }}"><span class="material-symbols-rounded">map</span> Map</a>
         {% if login_enabled %}
         <span class="muted">{{ username }}</span>
         <a class="btn small" href="{{ url_for('logout') }}"><span class="material-symbols-rounded">logout</span> Log out</a>

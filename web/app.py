@@ -16,6 +16,7 @@ Configuration via environment variables:
 
 import io
 import os
+import re
 import time
 import json
 import hmac
@@ -638,6 +639,51 @@ def api_export_dir():
     dest = os.path.join(dest_root, "%s-%s" % (os.path.basename(path) or "world", ts))
     shutil.copytree(path, dest)
     return jsonify({"ok": True, "message": "Copied to %s (available in the mounted ./data volume)." % dest})
+
+
+# --------------------------------------------------------------------------------------
+# Live overview map (rendered headless by the downloader into <world>/overview)
+# --------------------------------------------------------------------------------------
+def _overview_path():
+    return os.path.join(_world_path(), "overview")
+
+
+@app.route("/map")
+@login_required
+def map_view():
+    return render_template("map.html", username=USERNAME, login_enabled=LOGIN_ENABLED)
+
+
+@app.route("/map/meta.json")
+@login_required
+def map_meta():
+    meta = os.path.join(_overview_path(), "meta.json")
+    if os.path.isfile(meta):
+        resp = send_file(meta, mimetype="application/json")
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+    return jsonify({"regionPx": 512, "chunkPx": 16, "updated": 0,
+                    "currentDimension": None, "player": None, "tiles": {}})
+
+
+@app.route("/map/tile/<dim>/<mode>/<rx>/<rz>.png")
+@login_required
+def map_tile(dim, mode, rx, rz):
+    if mode not in ("normal", "caves"):
+        abort(404)
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", dim or ""):
+        abort(404)
+    try:
+        fname = "r.%d.%d.png" % (int(rx), int(rz))
+    except (TypeError, ValueError):
+        abort(404)
+    overview = os.path.normpath(_overview_path())
+    full = os.path.normpath(os.path.join(overview, dim, mode, fname))
+    if not full.startswith(overview) or not os.path.isfile(full):
+        abort(404)
+    resp = send_file(full, mimetype="image/png")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
 
 
 @app.route("/healthz")

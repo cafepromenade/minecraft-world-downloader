@@ -268,8 +268,11 @@ public class WorldManager {
             }
         }
 
-        // draw to GUI
-        chunks.forEach(GuiManager::setChunkLoaded);
+        // draw to GUI and/or the headless overview map
+        chunks.forEach((coord, chunk) -> {
+            GuiManager.setChunkLoaded(coord, chunk);
+            game.data.map.OverviewMap.getInstance().setChunkLoaded(coord, chunk);
+        });
 
         // delete the newly added chunks
         toDelete.forEach(this::unloadChunk);
@@ -310,8 +313,11 @@ public class WorldManager {
         }
 
         if (drawInGui) {
-            // draw the chunk once its been parsed
-            chunk.whenParsed(() -> GuiManager.setChunkLoaded(chunk.location, chunk));
+            // draw the chunk once its been parsed (to the GUI and/or the headless overview map)
+            chunk.whenParsed(() -> {
+                GuiManager.setChunkLoaded(chunk.location, chunk);
+                game.data.map.OverviewMap.getInstance().setChunkLoaded(chunk.location, chunk);
+            });
         }
 
         this.renderDistanceExtender.notifyLoaded(chunk.location.stripDimension());
