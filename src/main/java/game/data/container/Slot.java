@@ -49,7 +49,8 @@ public class Slot {
 
     public CompoundTag toNbt() {
         CompoundTag tag = new CompoundTag();
-        tag.add("id", new StringTag(RegistryManager.getInstance().getItemRegistry().getItemName(itemId)));
+        String itemName = RegistryManager.getInstance().getItemRegistry().getItemName(itemId);
+        tag.add("id", new StringTag(itemName != null ? itemName : "minecraft:air"));
 
         // 1.20.5 reworked the item NBT format: the stack size moved from "Count" (byte) to "count" (int)
         // and item data moved from "tag" into "components". Writing the old keys to a 1.20.5+ world makes
