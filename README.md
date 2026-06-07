@@ -225,6 +225,14 @@ launches the container and opens the console in your browser. Download the **NSI
 
 </details>
 
+### Credits
+This is a fork of [minecraft-world-downloader by Mirco Kroon](https://github.com/mircokroon/minecraft-world-downloader),
+and incorporates fixes/features from the [TheHecateII](https://github.com/TheHecateII/minecraft-world-downloader),
+[7byLoper](https://github.com/7byLoper/minecraft-world-downloader) and
+[trichhoffson](https://github.com/trichhoffson/minecraft-world-downloader) forks. See
+**[CREDITS.md](CREDITS.md)** for the full list of contributors, forks, and every third-party
+dependency (each linked to its source repository).
+
 ### Contact
 <details>
   <summary>Contact information</summary>
