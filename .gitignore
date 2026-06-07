@@ -52,3 +52,7 @@ FINAL_COMPLETION_REPORT.txt
 FINAL_TEST_REPORT.txt
 GITHUB_ACTIONS_SUMMARY.txt
 TEST_RESULTS.txt
+
+# Python bytecode caches
+__pycache__/
+*.pyc
