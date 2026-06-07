@@ -149,16 +149,36 @@
     </Window.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="26" MaxWidth="780" HorizontalAlignment="Stretch">
+        <StackPanel x:Name="RootPanel" Margin="26" MaxWidth="780" HorizontalAlignment="Stretch">
+            <StackPanel.LayoutTransform>
+                <ScaleTransform x:Name="RootScale" ScaleX="1" ScaleY="1" />
+            </StackPanel.LayoutTransform>
 
             <!-- Header -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                <TextBlock Text="&#x26CF;" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0" />
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="World Downloader" Foreground="{StaticResource Text}" FontSize="22" FontWeight="Bold" />
-                    <TextBlock Text="Set up and run the web console in Docker" Foreground="{StaticResource Muted}" FontSize="13" />
+            <DockPanel Margin="0,0,0,16" LastChildFill="False">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="&#x26CF;" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="World Downloader" Foreground="{StaticResource Text}" FontSize="22" FontWeight="Bold" />
+                        <TextBlock Text="Set up and run the web console in Docker" Foreground="{StaticResource Muted}" FontSize="13" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+                <!-- Accessibility / theme controls -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <TextBlock Text="Theme" Style="{StaticResource Lbl}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox x:Name="ThemeBox" Width="124" SelectionChanged="Theme_Changed"
+                              AutomationProperties.Name="Colour theme"
+                              ToolTip="Switch between dark, light and high-contrast themes">
+                        <ComboBoxItem Content="Dark" IsSelected="True" />
+                        <ComboBoxItem Content="Light" />
+                        <ComboBoxItem Content="High contrast" />
+                    </ComboBox>
+                    <CheckBox x:Name="LargeTextBox" Content="Large text" Margin="14,0,0,0" VerticalAlignment="Center"
+                              Foreground="{StaticResource Text}" Click="LargeText_Changed"
+                              AutomationProperties.Name="Large text"
+                              ToolTip="Increase the size of everything for easier reading" />
+                </StackPanel>
+            </DockPanel>
 
             <!-- Status -->
             <Border x:Name="StatusBorder" CornerRadius="10" Padding="14,11" Margin="0,0,0,16"
@@ -269,6 +289,59 @@
                                  Visibility="Collapsed" Background="{StaticResource Outline}" Foreground="{StaticResource Accent}" BorderThickness="0" />
                     <TextBlock Style="{StaticResource Desc}"
                                Text="Start: launches everything and opens the browser.   Stop: shuts the container down (worlds are kept).   Open console: reopens the website.   Update image: pulls the newest build." />
+                </StackPanel>
+            </Border>
+
+            <!-- 3D map (BlueMap) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource H}" Text="3D map (BlueMap)" />
+                    <TextBlock Style="{StaticResource Desc}"
+                               Text="Upgrade the downloaded world with a server jar, then render an interactive 3D web map with BlueMap. Requires Python and Java on this PC."
+                               Margin="2,2,0,8" />
+                    <TextBlock Style="{StaticResource Lbl}" Text="Server jar for world upgrade (optional)" />
+                    <Grid Margin="0,2,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="ServerJarBox" Style="{StaticResource Tb}"
+                                 AutomationProperties.Name="Server jar path for world upgrade" />
+                        <Button Grid.Column="1" Style="{StaticResource Btn}" Content="Browse" Margin="8,0,0,0"
+                                Click="BrowseJar_Click" AutomationProperties.Name="Browse for server jar" />
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Render threads (0 = auto)" />
+                            <TextBox x:Name="BmThreads" Style="{StaticResource Tb}" Text="0"
+                                     AutomationProperties.Name="BlueMap render threads" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Style="{StaticResource Lbl}" Text="Web map port" />
+                            <TextBox x:Name="BmPort" Style="{StaticResource Tb}" Text="8100"
+                                     AutomationProperties.Name="BlueMap web map port" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Lbl}" Text="Dimensions to render" />
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,4">
+                        <CheckBox x:Name="BmOverworld" Content="Overworld" IsChecked="True"
+                                  Foreground="{StaticResource Text}" Margin="0,0,12,0" AutomationProperties.Name="Render overworld" />
+                        <CheckBox x:Name="BmNether" Content="Nether" IsChecked="True"
+                                  Foreground="{StaticResource Text}" Margin="0,0,12,0" AutomationProperties.Name="Render nether" />
+                        <CheckBox x:Name="BmEnd" Content="End" IsChecked="True"
+                                  Foreground="{StaticResource Text}" AutomationProperties.Name="Render the end" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button x:Name="RenderMapBtn" Style="{StaticResource AccentBtn}" Content="Render 3D map"
+                                Click="RenderMap_Click" AutomationProperties.Name="Render the 3D map with BlueMap"
+                                ToolTip="Upgrade (if a server jar is set) and render the downloaded world, then serve it." />
+                        <Button x:Name="OpenMapBtn" Style="{StaticResource Btn}" Content="Open 3D map" Margin="10,0,0,0"
+                                Click="OpenMap_Click" AutomationProperties.Name="Open the rendered 3D map in the browser" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
