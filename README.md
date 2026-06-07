@@ -10,16 +10,20 @@ A Minecraft world downloader that works as a proxy server between the client and
 
 This release adds opt-in automation features and fixes several long-standing bugs in the
 container-capture path. **Everything below was verified end-to-end** with a real Paper server driven by
-a [mineflayer](https://github.com/PrismarineJS/mineflayer) bot through the proxy on **1.12.2** and
-**1.20.4** (world download → auto-open chest saving → chat auto-reply, with the saved region NBT
-inspected to confirm the items were written).
+a [mineflayer](https://github.com/PrismarineJS/mineflayer) bot through the proxy — the full matrix
+(**1.12.2, 1.20.4, 1.21.8, 1.21.11**) passed **3/3 runs each**: world download → auto-open + saving of
+every container type → chat auto-reply. The downloaded worlds were then **re-opened in a fresh server**
+and a bot read the chests back to confirm the items are correct **in-game**, not just in the NBT bytes.
 
 ### ✨ New features
 - **🤖 Auto-open container sweep now actually works on modern servers.** As you move, the proxy opens
   nearby containers one at a time (rate-limited) and saves their contents — no manual clicking.
   Verified for **all block container types**: chest, trapped chest, barrel, furnace, blast furnace,
-  smoker, hopper, dropper, dispenser, brewing stand, shulker boxes (and crafters on 1.21+).
+  smoker, hopper, dropper, dispenser, brewing stand, shulker boxes, **and crafters** (1.21+).
   Enable with `--auto-open-containers`.
+- **🛒 Container minecarts** (chest / hopper minecarts) are auto-opened too. They're entities, so their
+  captured contents are written into the saved chunk's entity NBT (verified by reading the minecart's
+  items back out of the saved region).
 - **📝 Auto-open item log.** Every auto-opened container is appended to a human-readable
   `auto-open-items.log` (beside the world folder) listing the type, coordinates and items, e.g.
   `minecraft:overworld chest @ 12 -60 5 (3 stacks, 81 items)` → `minecraft:diamond x12`. Customize the
@@ -34,6 +38,10 @@ inspected to confirm the items were written).
   still open. Pass `--auto-open-allow-chest-near-players` to disable the check.
 
 ### 🐛 Fixes
+- **Saved containers looked empty in 1.20.5+ Minecraft**: the item NBT stack size moved from `Count`
+  (byte) to `count` (int) in 1.20.5, but the downloader still wrote `Count`, so the client read a
+  default of 1 for every stack. Now writes the correct format per version — confirmed by loading the
+  downloaded world in a real server and reading the exact chest contents back.
 - **1.21.5+ world download was broken** (chunks failed to parse → 0 chunks saved): 1.21.5 removed the
   per-array "data length" varint from paletted containers; the long count is now derived from
   bits-per-entry. Verified downloading + saving on 1.21.8 and 1.21.11.
@@ -49,15 +57,15 @@ inspected to confirm the items were written).
 - **1.12.2 auto-open** now uses the correct pre-1.14 *Player Block Placement* packet layout.
 
 ### ✅ Verified versions
-End-to-end (Paper server + mineflayer bot through the proxy), run repeatedly: **1.12.2, 1.20.4,
-1.21.8, 1.21.11** — world download, auto-open + saving of all block container types (saved region NBT
-inspected), and chat auto-reply.
+End-to-end (Paper server + mineflayer bot through the proxy), **3/3 runs each** on **1.12.2, 1.20.4,
+1.21.8, 1.21.11**: world download, auto-open + saving of every container type, and chat auto-reply.
+The player-aware chest safety has its own two-bot test, and minecart capture + the in-game load-back
+(re-open the downloaded world in a server and read the chests with a bot) are verified too.
 
 ### ⚠️ Known limitations
-- **Minecart containers** (chest/hopper minecarts) are entity-based and are **not yet** auto-opened.
 - **26.1.2** cannot be exercised by a bot yet — mineflayer/minecraft-data have no 26.x protocol data
   (`unsupported protocol version: 26.1.2`). The proxy's 26.1 mapping reuses the verified 1.21.5+ chunk
-  path, so the same code is covered by the 1.21.8/1.21.11 tests.
+  and signed-chat paths, so the same code is covered by the 1.21.8/1.21.11 tests.
 - On 1.12.2, **furnaces and brewing stands** aren't auto-opened (their block state resolves to a null
   name in the bundled 1.12 block registry).
 
