@@ -86,10 +86,17 @@ public abstract class ChunkEntities extends ChunkEvents {
 
         String type = RegistryManager.getInstance().getMenuRegistry().getName(window.getType());
 
+        // getSlotsNbt() skips null/empty slots, so an empty container yields an empty list. An empty
+        // auto-opened lectern (lecterns are auto-openable) would otherwise make .get(0) throw
+        // IndexOutOfBoundsException; DataReader swallows that throw, losing the save AND stalling the
+        // auto-open sweep (onContentCaptured never runs). Guard the access.
+        java.util.List<CompoundTag> slotNbt = window.getSlotsNbt();
         if (type.equals("minecraft:lectern")) {
-            blockEntity.add("Book", window.getSlotsNbt().get(0).asCompound());
+            if (!slotNbt.isEmpty()) {
+                blockEntity.add("Book", slotNbt.get(0).asCompound());
+            }
         } else {
-            blockEntity.add("Items", new ListTag(Tag.TAG_COMPOUND, window.getSlotsNbt()));
+            blockEntity.add("Items", new ListTag(Tag.TAG_COMPOUND, slotNbt));
         }
 
         if (window.hasCustomName()) {

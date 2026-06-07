@@ -84,6 +84,7 @@ public class WorldManager {
 
     private ContainerManager containerManager;
     private game.data.container.ContainerAutoOpener containerAutoOpener;
+    private game.data.chat.AutoChatReply autoChatReply;
     /** Player gamemode (0 survival, 1 creative, 2 adventure, 3 spectator); -1 until observed. */
     private volatile int playerGamemode = -1;
     private CommandBlockManager commandBlockManager;
@@ -437,7 +438,13 @@ public class WorldManager {
      */
     public void touchChunk(ChunkEntities c) {
         c.touch();
-        regions.get(c.getLocation().chunkToDimRegion()).touch();
+        // Null-guard: the region may have been removed (canRemove -> regions.remove) by an unload that
+        // raced this capture. Without the guard this NPEs, and PacketHandler.handle does not catch it,
+        // silently aborting the capture.
+        Region r = regions.get(c.getLocation().chunkToDimRegion());
+        if (r != null) {
+            r.touch();
+        }
     }
 
     public DimensionRegistry getDimensionRegistry() {
@@ -572,6 +579,13 @@ public class WorldManager {
             containerAutoOpener = new game.data.container.ContainerAutoOpener();
         }
         return containerAutoOpener;
+    }
+
+    public game.data.chat.AutoChatReply getAutoChatReply() {
+        if (autoChatReply == null) {
+            autoChatReply = new game.data.chat.AutoChatReply();
+        }
+        return autoChatReply;
     }
 
     /**

@@ -68,6 +68,25 @@ public class ClientBoundGamePacketHandler extends PacketHandler {
             return true;
         });
 
+        // Opt-in (--auto-reply): inspect server chat for a yellow trigger and reply with its red text.
+        // SystemChat carries server/console messages (1.19+); content is NBT from 1.20.3+, else a JSON
+        // string. We only read the content, then always forward the packet unchanged to the client.
+        operations.put("SystemChat", provider -> {
+            if (Config.autoReply()) {
+                try {
+                    game.data.chat.AutoChatReply replier = worldManager.getAutoChatReply();
+                    if (Config.versionReporter().isAtLeast(Version.V1_20_4)) {
+                        replier.onComponentNbt(provider.readNbtTag());
+                    } else {
+                        replier.onComponentJson(provider.readString());
+                    }
+                } catch (Exception ex) {
+                    // never let chat parsing break the stream or the chat display
+                }
+            }
+            return true;
+        });
+
         operations.put("MoveEntityPos", provider -> {
             entityRegistry.updatePositionRelative(provider);
             return true;

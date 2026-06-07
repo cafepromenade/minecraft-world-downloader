@@ -21,7 +21,11 @@ import java.util.Map;
 public class ContainerManager {
     private static final int PLAYER_INVENTORY = 0;
 
-    private Coordinate3D lastInteractedWith;
+    // volatile: written on the serverbound thread (auto-opener tick / real UseItemOn) and read on the
+    // clientbound thread (openWindow when OpenScreen arrives). Without the memory barrier the clientbound
+    // thread could observe null or a stale target, registering an auto-opened window at the wrong/no
+    // location so its contents are never saved.
+    private volatile Coordinate3D lastInteractedWith;
     private final Map<Integer, InventoryWindow> knownWindows;
     private final Map<CoordinateDim3D, InventoryWindow> storedWindows;
     private final PlayerInventory playerInventory;
@@ -136,7 +140,16 @@ public class ContainerManager {
             }
         }
 
-        Chat message = new Chat(type + " - (" + count + ") " + pos.getX() + " " + pos.getY() + " " + pos.getZ());
+        // Message text is NOT hardcoded: it comes from a configurable template (--container-message-format)
+        // with {type} {count} {x} {y} {z} placeholders, so each deployment can choose its own format.
+        String text = Config.containerMessageFormat()
+                .replace("{type}", type)
+                .replace("{count}", Integer.toString(count))
+                .replace("{x}", Integer.toString(pos.getX()))
+                .replace("{y}", Integer.toString(pos.getY()))
+                .replace("{z}", Integer.toString(pos.getZ()));
+
+        Chat message = new Chat(text);
         message.setColor("green");
         // Show only on the action bar (above the hotbar), not in the chat box.
         Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
@@ -216,8 +229,18 @@ public class ContainerManager {
             if (Config.autoOpenContainers()) {
                 ContainerAutoOpener opener = WorldManager.getInstance().getContainerAutoOpener();
                 if (opener.isWaiting()) {
-                    closeWindow(windowId);
-                    opener.onContentCaptured(windowId);
+                    try {
+                        closeWindow(windowId);
+                    } catch (RuntimeException ex) {
+                        // A failure to save one container must not silently lose it AND stall the sweep:
+                        // DataReader swallows handler throwables, so without this catch the auto-opener
+                        // would stay waiting=true until its 1.5s timeout on every bad container. Log + go on.
+                        System.out.println("auto-open: failed to save container " + windowId + ": " + ex.getMessage());
+                    } finally {
+                        // Always free the server-side window and advance to the next container, even if the
+                        // local save threw — otherwise one bad container halts the entire sweep.
+                        opener.onContentCaptured(windowId);
+                    }
                 }
             }
         }

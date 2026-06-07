@@ -542,6 +542,7 @@
 				"0x68": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x05": "ChatMessage",
 				"0x0c": "ContainerClose",
 				"0x10": "Interact",
 				"0x14": "MovePlayerPos",
@@ -584,6 +585,7 @@
 				"0x6b": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x05": "ChatMessage",
 				"0x0b": "ConfigurationAcknowledged",
 				"0x0c": "ContainerClose",
 				"0x12": "Interact",
@@ -627,6 +629,7 @@
 				"0x6d": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x05": "ChatMessage",
 				"0x0b": "ConfigurationAcknowledged",
 				"0x0e": "ContainerClose",
 				"0x13": "Interact",
@@ -672,6 +675,7 @@
 				"0x70": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x06": "ChatMessage",
 				"0x0c": "ConfigurationAcknowledged",
 				"0x0f": "ContainerClose",
 				"0x16": "Interact",
@@ -717,6 +721,7 @@
 				"0x70": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x06": "ChatMessage",
 				"0x0C": "ConfigurationAcknowledged",
 				"0x0F": "ContainerClose",
 				"0x16": "Interact",
@@ -762,6 +767,7 @@
 				"0x20": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x07": "ChatMessage",
 				"0x0E": "ConfigurationAcknowledged",
 				"0x11": "ContainerClose",
 				"0x18": "Interact",
@@ -807,6 +813,7 @@
 				"0x20": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x07": "ChatMessage",
 				"0x0E": "ConfigurationAcknowledged",
 				"0x11": "ContainerClose",
 				"0x18": "Interact",
@@ -852,6 +859,7 @@
 				"0x1F": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x07": "ChatMessage",
 				"0x0E": "ConfigurationAcknowledged",
 				"0x11": "ContainerClose",
 				"0x18": "Interact",
@@ -897,6 +905,7 @@
 				"0x1F": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x08": "ChatMessage",
 				"0x0F": "ConfigurationAcknowledged",
 				"0x12": "ContainerClose",
 				"0x19": "Interact",
@@ -942,6 +951,7 @@
 				"0x1F": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x08": "ChatMessage",
 				"0x0F": "ConfigurationAcknowledged",
 				"0x12": "ContainerClose",
 				"0x19": "Interact",
@@ -986,6 +996,7 @@
 				"0x23": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x08": "ChatMessage",
 				"0x0F": "ConfigurationAcknowledged",
 				"0x12": "ContainerClose",
 				"0x19": "Interact",
@@ -1030,6 +1041,7 @@
 				"0x23": "TeleportEntity"
 			},
 			"serverBound": {
+				"0x08": "ChatMessage",
 				"0x0F": "ConfigurationAcknowledged",
 				"0x12": "ContainerClose",
 				"0x19": "Interact",
@@ -1074,6 +1086,7 @@
 				"0x77": "SystemChat"
 			},
 			"serverBound": {
+				"0x08": "ChatMessage",
 				"0x0F": "ConfigurationAcknowledged",
 				"0x12": "ContainerClose",
 				"0x19": "Interact",

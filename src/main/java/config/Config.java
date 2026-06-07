@@ -416,8 +416,8 @@ public class Config {
     public boolean autoOpenContainers = false;
 
     @Option(name = "--auto-open-delay",
-            usage = "Minimum milliseconds between auto-opened containers (default 600). Higher = safer.")
-    public int autoOpenDelayMs = 600;
+            usage = "Minimum milliseconds between auto-opened containers (default 400). Higher = safer.")
+    public int autoOpenDelayMs = 400;
 
     @Option(name = "--auto-open-reach",
             usage = "Max distance (blocks) to a container for auto-open; keep at/below survival reach (default 4.0).")
@@ -434,6 +434,27 @@ public class Config {
                     + "or a comma list of survival,creative,adventure,spectator. A restricted list only "
                     + "activates once that gamemode is observed (e.g. after switching into spectator).")
     public String autoOpenGamemodes = "all";
+
+    @Option(name = "--container-message-format",
+            usage = "Template for the saved-container action-bar message (not hardcoded). Placeholders: "
+                    + "{type} = block type (e.g. chest), {count} = slots with items, {x} {y} {z} = block "
+                    + "coordinates. Default: \"{type} ({count}) - {x} {y} {z}\".")
+    public String containerMessageFormat = "{type} ({count}) - {x} {y} {z}";
+
+    @Option(name = "--auto-reply",
+            usage = "EXPERIMENTAL: when an incoming chat message's yellow text matches --auto-reply-trigger, "
+                    + "send that same message's red text back to the server as a chat message. Sends REAL chat; "
+                    + "servers enforcing secure chat may reject it. Use only where permitted.")
+    public boolean autoReply = false;
+
+    @Option(name = "--auto-reply-trigger",
+            usage = "The exact yellow text that triggers an auto-reply (surrounding spaces/quotes ignored). "
+                    + "Required for --auto-reply to do anything. E.g. \"You have been warned by Console for\".")
+    public String autoReplyTrigger = "";
+
+    @Option(name = "--auto-reply-delay",
+            usage = "Minimum milliseconds between auto-replies (default 1500), to avoid chat spam / kicks.")
+    public int autoReplyDelayMs = 1500;
 
     @Option(name = "--disable-world-gen",
             usage = "Set world type to a superflat void to prevent new chunks from being added.")
@@ -538,6 +559,21 @@ public class Config {
         }
         return set.isEmpty() ? null : set;
     }
+
+    /**
+     * Template for the saved-container action-bar message, with {type} {count} {x} {y} {z} placeholders.
+     * Falls back to a sensible default if cleared, so the message is never accidentally blank.
+     */
+    public static String containerMessageFormat() {
+        String f = instance.containerMessageFormat;
+        return (f == null || f.isBlank()) ? "{type} ({count}) - {x} {y} {z}" : f;
+    }
+
+    public static boolean autoReply() { return instance.autoReply; }
+
+    public static String autoReplyTrigger() { return instance.autoReplyTrigger; }
+
+    public static int autoReplyDelayMs() { return Math.max(250, instance.autoReplyDelayMs); }
 
     public static VersionReporter versionReporter() {
         return instance.versionReporter;
