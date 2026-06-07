@@ -1,0 +1,7 @@
+*.jar
+bluemap-config/
+bluemap-data/
+bluemap-web/
+upgrade-server/
+web/
+settings.json

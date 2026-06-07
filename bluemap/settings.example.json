@@ -1,0 +1,14 @@
+{
+  "acceptDownload": true,
+  "renderThreadCount": 0,
+  "webserverEnabled": true,
+  "webserverPort": 8100,
+  "dimensions": ["overworld", "nether", "end"],
+
+  "ambientLight": 0.1,
+  "skyColor": "#7dabff",
+  "renderEdges": true,
+  "saveHiresLayer": true,
+  "minY": null,
+  "maxY": null
+}
