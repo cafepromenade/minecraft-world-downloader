@@ -473,6 +473,15 @@ public class Config {
             usage = "Minimum milliseconds between auto-replies (default 1500), to avoid chat spam / kicks.")
     public int autoReplyDelayMs = 1500;
 
+    @Option(name = "--auto-reply-trigger-color",
+            usage = "Colour of the text that must match --auto-reply-trigger (default 'yellow'). Can be any "
+                    + "Minecraft colour name so the feature works for differently-coloured messages.")
+    public String autoReplyTriggerColor = "yellow";
+
+    @Option(name = "--auto-reply-color",
+            usage = "Colour of the text that is sent back as the reply (default 'red').")
+    public String autoReplyColor = "red";
+
     @Option(name = "--disable-world-gen",
             usage = "Set world type to a superflat void to prevent new chunks from being added.")
     public boolean disableWorldGen = false;
@@ -617,6 +626,16 @@ public class Config {
     public static String autoReplyTrigger() { return instance.autoReplyTrigger; }
 
     public static int autoReplyDelayMs() { return Math.max(250, instance.autoReplyDelayMs); }
+
+    public static String autoReplyTriggerColor() {
+        return instance.autoReplyTriggerColor == null || instance.autoReplyTriggerColor.isBlank()
+                ? "yellow" : instance.autoReplyTriggerColor;
+    }
+
+    public static String autoReplyColor() {
+        return instance.autoReplyColor == null || instance.autoReplyColor.isBlank()
+                ? "red" : instance.autoReplyColor;
+    }
 
     public static VersionReporter versionReporter() {
         return instance.versionReporter;

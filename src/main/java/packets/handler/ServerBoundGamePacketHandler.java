@@ -79,6 +79,9 @@ public class ServerBoundGamePacketHandler extends PacketHandler {
             provider.readFloat();   // Cursor y
             provider.readFloat();   // Cursor z
             provider.readBoolean(); // If the player's head is inside of a block
+            if (Config.versionReporter().isAtLeast(Version.V1_21_3)) {
+                provider.readBoolean(); // worldBorderHit (added in 1.21.2/1.21.3)
+            }
             // MC 1.19+ appends a block-change sequence; remember it so auto-open opens never run ahead
             // of the real client's sequence.
             if (Config.versionReporter().isAtLeast(Version.V1_19)) {

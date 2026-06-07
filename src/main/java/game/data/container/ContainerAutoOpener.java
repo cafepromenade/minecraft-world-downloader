@@ -80,21 +80,8 @@ public class ContainerAutoOpener {
         if (!"minecraft:chest".equals(name) && !"minecraft:trapped_chest".equals(name)) {
             return false;
         }
-        double r = Config.autoOpenPlayerRadius();
-        double rSq = r * r;
-        for (game.data.entity.PlayerEntity player : WorldManager.getInstance().getEntityRegistry().getPlayerSet()) {
-            game.data.coordinates.CoordinateDouble3D pp = player.getPosition();
-            if (pp == null) {
-                continue;
-            }
-            double dx = pp.getX() - (pos.getX() + 0.5);
-            double dy = pp.getY() - (pos.getY() + 0.5);
-            double dz = pp.getZ() - (pos.getZ() + 0.5);
-            if (dx * dx + dy * dy + dz * dz <= rSq) {
-                return true;
-            }
-        }
-        return false;
+        return WorldManager.getInstance().getEntityRegistry()
+                .isPlayerNear(pos, Config.autoOpenPlayerRadius());
     }
 
     public static boolean isOpenable(String blockName) {
@@ -268,6 +255,9 @@ public class ContainerAutoOpener {
             packet.writeFloat(0.5f);           // cursor y
             packet.writeFloat(0.5f);           // cursor z
             packet.writeBoolean(false);        // head inside block
+            if (Config.versionReporter().isAtLeast(Version.V1_21_3)) {
+                packet.writeBoolean(false);    // worldBorderHit (added in 1.21.2/1.21.3)
+            }
             if (Config.versionReporter().isAtLeast(Version.V1_19)) {
                 packet.writeVarInt(lastSequence); // block-change sequence (MC 1.19+)
             }

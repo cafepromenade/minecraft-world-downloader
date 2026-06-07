@@ -143,7 +143,8 @@ public class AutoChatReply {
     }
 
     private void process(List<Run> runs) {
-        String reply = computeReply(runs, Config.autoReplyTrigger());
+        String reply = computeReply(runs, Config.autoReplyTrigger(),
+                Config.autoReplyTriggerColor(), Config.autoReplyColor());
         if (reply != null) {
             trySend(reply);
         }
@@ -153,36 +154,38 @@ public class AutoChatReply {
      * Pure matching: concatenate the message's yellow and red text; if the yellow text matches the
      * trigger, return the sanitized red text to send back, otherwise null. Visible for testing.
      */
-    static String computeReply(List<Run> runs, String trigger) {
+    static String computeReply(List<Run> runs, String trigger, String matchColor, String replyColor) {
         if (trigger == null || trigger.isBlank()) {
             return null; // nothing configured to match
         }
 
-        StringBuilder yellow = new StringBuilder();
-        StringBuilder red = new StringBuilder();
+        // The trigger ("match") colour and the reply colour are both configurable; they default to
+        // yellow and red but can be any colour so the feature works for differently-coloured messages.
+        StringBuilder triggerText = new StringBuilder();
+        StringBuilder replyText = new StringBuilder();
         for (Run r : runs) {
             if (r.color() == null) {
                 continue;
             }
-            if (r.color().equalsIgnoreCase("yellow")) {
-                yellow.append(r.text());
-            } else if (r.color().equalsIgnoreCase("red")) {
-                red.append(r.text());
+            if (r.color().equalsIgnoreCase(matchColor)) {
+                triggerText.append(r.text());
+            } else if (r.color().equalsIgnoreCase(replyColor)) {
+                replyText.append(r.text());
             }
         }
 
-        if (red.length() == 0 || !matches(yellow.toString(), trigger)) {
+        if (replyText.length() == 0 || !matches(triggerText.toString(), trigger)) {
             return null;
         }
-        String reply = sanitize(red.toString());
+        String reply = sanitize(replyText.toString());
         return reply.isEmpty() ? null : reply;
     }
 
-    /** Convenience for tests: match against a JSON-string chat component. */
+    /** Convenience for tests: match against a JSON-string chat component (default yellow/red colours). */
     static String computeReplyFromJson(String json, String trigger) {
         List<Run> runs = new ArrayList<>();
         flattenJson(JsonParser.parseString(json), null, runs);
-        return computeReply(runs, trigger);
+        return computeReply(runs, trigger, "yellow", "red");
     }
 
     /** Exact match of the message's yellow text against the trigger, ignoring surrounding quotes/space. */

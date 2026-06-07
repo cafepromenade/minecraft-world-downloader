@@ -1,6 +1,7 @@
 package game.data.chunk.version;
 
 import config.Config;
+import config.Version;
 import game.data.chunk.BlockEntityRegistry;
 import game.data.chunk.ChunkSection;
 import game.data.chunk.palette.BlockState;
@@ -112,15 +113,23 @@ public class Chunk_1_18 extends Chunk_1_17 {
                 section.setBlockPalette(blockPalette);
             }
 
+            // 1.21.5+ removed the explicit "data array length" varint from paletted containers; the
+            // number of packed longs is now derived from the bits-per-entry. Older versions still send it.
+            boolean noLengthPrefix = Config.versionReporter().isAtLeast(Version.V1_21_5);
+
             section.setBlockCount(blockCount);
-            section.setBlocks(dataProvider.readLongArray(dataProvider.readVarInt()));
+            int blockLongs = noLengthPrefix
+                    ? ChunkSection_1_16.longsRequired(blockPalette.getBitsPerBlock())
+                    : dataProvider.readVarInt();
+            section.setBlocks(dataProvider.readLongArray(blockLongs));
 
             Palette biomePalette = Palette.readPalette(dataProvider, PaletteType.BIOMES);
             section.setBiomePalette(biomePalette);
 
             // check how many longs we expect, if there's more discard the rest
             int longsExpectedBiomes = ChunkSection_1_18.longsRequiredBiomes(biomePalette.getBitsPerBlock());
-            section.setBiomes(dataProvider.readLongArray(dataProvider.readVarInt(), longsExpectedBiomes));
+            int biomeLongs = noLengthPrefix ? longsExpectedBiomes : dataProvider.readVarInt();
+            section.setBiomes(dataProvider.readLongArray(biomeLongs, longsExpectedBiomes));
 
             // May replace an existing section or a null one
             setChunkSection(sectionY, section);

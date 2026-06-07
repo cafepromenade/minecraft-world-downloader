@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
 
 import game.data.WorldManager;
 import game.data.chunk.Chunk;
+import game.data.coordinates.Coordinate3D;
 import game.data.coordinates.CoordinateDim2D;
+import game.data.coordinates.CoordinateDouble3D;
 import game.data.entity.specific.Villager;
 import packets.DataTypeProvider;
 import packets.UUID;
@@ -252,6 +254,36 @@ public class EntityRegistry {
 
     public Collection<PlayerEntity> getPlayerSet() {
         return players.values();
+    }
+
+    /**
+     * Whether another player is within {@code radius} blocks of the given block position. Covers both
+     * the legacy AddPlayer table (pre-1.20.2) and players spawned as generic entities with typeName
+     * "minecraft:player" (1.20.2+). The downloading player is never in either set, so it is excluded.
+     */
+    public boolean isPlayerNear(Coordinate3D blockPos, double radius) {
+        double rSq = radius * radius;
+        double bx = blockPos.getX() + 0.5, by = blockPos.getY() + 0.5, bz = blockPos.getZ() + 0.5;
+        for (PlayerEntity player : players.values()) {
+            CoordinateDouble3D pp = player.getPosition();
+            if (pp == null) {
+                continue;
+            }
+            double dx = pp.getX() - bx, dy = pp.getY() - by, dz = pp.getZ() - bz;
+            if (dx * dx + dy * dy + dz * dz <= rSq) {
+                return true;
+            }
+        }
+        for (Entity e : entities.values()) {
+            if (!"minecraft:player".equals(e.getTypeName())) {
+                continue;
+            }
+            double dx = e.x - bx, dy = e.y - by, dz = e.z - bz;
+            if (dx * dx + dy * dy + dz * dz <= rSq) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void addVillagerTrades(DataTypeProvider provider) {
