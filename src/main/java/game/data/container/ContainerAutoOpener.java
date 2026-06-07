@@ -76,10 +76,10 @@ public class ContainerAutoOpener {
 
     /**
      * Whether opening this position must be skipped because it is a player-protected container
-     * (chest, trapped chest, or barrel) and another player is within the configured radius. Enabled
-     * by default; only applies to those containers so every other container type still auto-opens.
-     * The block is NOT marked attempted, so it will be opened later once no player is nearby. Excludes
-     * the downloading player (other players only appear here as tracked entities).
+     * (chest, trapped chest, barrel, or any shulker box) and another player is within the configured
+     * radius. Enabled by default; only applies to those containers so every other container type still
+     * auto-opens. The block is NOT marked attempted, so it will be opened later once no player is
+     * nearby. Excludes the downloading player (other players only appear here as tracked entities).
      */
     private boolean blockedByNearbyPlayer(Coordinate3D pos) {
         if (!Config.autoOpenSkipChestNearPlayers()) {
@@ -87,7 +87,9 @@ public class ContainerAutoOpener {
         }
         game.data.chunk.palette.BlockState bs = WorldManager.getInstance().blockStateAt(pos);
         String name = bs == null ? null : bs.getName();
-        if (name == null || !PLAYER_PROTECTED.contains(name)) {
+        // PLAYER_PROTECTED covers chest/trapped_chest/barrel; the suffix covers all 17 shulker variants
+        // (plain minecraft:shulker_box and every coloured *_shulker_box).
+        if (name == null || (!PLAYER_PROTECTED.contains(name) && !name.endsWith("shulker_box"))) {
             return false;
         }
         return WorldManager.getInstance().getEntityRegistry()

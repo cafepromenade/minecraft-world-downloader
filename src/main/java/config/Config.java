@@ -455,10 +455,11 @@ public class Config {
     public String autoOpenLogFile = "";
 
     @Option(name = "--auto-open-allow-chest-near-players",
-            usage = "By default the auto-open sweep will NOT open a chest, trapped chest or barrel while "
-                    + "another player is within --auto-open-player-radius (to avoid opening containers in "
-                    + "view of others). Pass this flag to open them anyway. Only affects chests/trapped "
-                    + "chests/barrels; all other container types always auto-open.")
+            usage = "By default the auto-open sweep will NOT open a chest, trapped chest, barrel or "
+                    + "shulker box while another player is within --auto-open-player-radius (to avoid "
+                    + "opening containers in view of others). Pass this flag to open them anyway. Only "
+                    + "affects chests/trapped chests/barrels/shulker boxes; all other container types "
+                    + "always auto-open.")
     public boolean autoOpenAllowChestNearPlayers = false;
 
     @Option(name = "--auto-open-player-radius",
@@ -621,7 +622,7 @@ public class Config {
 
     public static String autoOpenLogFile() { return instance.autoOpenLogFile; }
 
-    /** Whether to skip auto-opening chests/trapped chests/barrels while another player is nearby (default true). */
+    /** Whether to skip auto-opening chests/trapped chests/barrels/shulker boxes while another player is nearby (default true). */
     public static boolean autoOpenSkipChestNearPlayers() { return !instance.autoOpenAllowChestNearPlayers; }
 
     public static double autoOpenPlayerRadius() { return instance.autoOpenPlayerRadius; }
