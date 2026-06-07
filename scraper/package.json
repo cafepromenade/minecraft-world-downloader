@@ -1,0 +1,15 @@
+{
+  "name": "mcwd-scraper",
+  "version": "1.0.0",
+  "description": "Mineflayer auto-explorer bots that drive the world-downloader proxy to scrape a world chunk-by-chunk (Microsoft / offline login, gamemode-aware movement, multi-bot, visited-chunk dedup).",
+  "type": "commonjs",
+  "bin": { "mcwd-scrape": "scrape.js" },
+  "scripts": {
+    "start": "node scrape.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.20.0",
+    "mineflayer-pathfinder": "^2.4.5",
+    "prismarine-auth": "^2.5.0"
+  }
+}
