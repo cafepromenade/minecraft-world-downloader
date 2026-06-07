@@ -127,15 +127,20 @@ function buildTargets(cfg) {
     const r = Math.ceil(cfg.radius / 16);
     minCX = cCX - r; maxCX = cCX + r; minCZ = cCZ - r; maxCZ = cCZ + r;
   }
-  // Spiral outward from the center so the most relevant area is covered first.
+  // Serpentine (boustrophedon) order: walk each column, snaking back on the next, so consecutive
+  // waypoints are always adjacent (~16 blocks). A distance-sorted spiral makes the bot crisscross the
+  // whole area between same-radius points, which is catastrophic for walking large areas.
   const targets = [];
+  let flip = false;
   for (let cx = minCX; cx <= maxCX; cx += cfg.chunkStep) {
+    const column = [];
     for (let cz = minCZ; cz <= maxCZ; cz += cfg.chunkStep) {
-      targets.push([cx, cz]);
+      column.push([cx, cz]);
     }
+    if (flip) column.reverse();
+    for (const t of column) targets.push(t);
+    flip = !flip;
   }
-  const midX = (minCX + maxCX) / 2, midZ = (minCZ + maxCZ) / 2;
-  targets.sort((a, b) => (Math.hypot(a[0] - midX, a[1] - midZ)) - (Math.hypot(b[0] - midX, b[1] - midZ)));
   return targets;
 }
 
@@ -267,7 +272,9 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
         mine = buildTargets(Object.assign({}, cfg, { center: { x: sp.x, z: sp.z }, bbox: null }));
         console.log(tag, `centering on spawn ${vecStr(sp)} -> ${mine.length} chunks`);
       } else {
-        mine = allTargets.filter((_, i) => i % botCount === index);
+        // contiguous slice per bot so each walks an efficient (serpentine) stretch, not every Nth point
+        const per = Math.ceil(allTargets.length / botCount);
+        mine = allTargets.slice(index * per, (index + 1) * per);
       }
 
       const Vec3 = require('vec3');
@@ -284,6 +291,11 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
         try { bot.creative.startFlying(); } catch (_) {}
       }
 
+      // The anti-stuck watchdog only nudges controls for MANUAL movement (fly / fallback-walk).
+      // When pathfinder drives, its own per-waypoint timeout handles stuck waypoints, and manual
+      // nudging would fight the planner and slow everything to a crawl.
+      const manualMove = (action === 'fly') || (action === 'walk' && !pf);
+
       for (const [cx, cz] of mine) {
         if (stopped) break;
         if (action === 'idle') break;
@@ -291,7 +303,7 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
 
         const tx = cx * 16 + 8, tz = cz * 16 + 8;
         try {
-          if (bot._setNavigating) bot._setNavigating(true);
+          if (manualMove && bot._setNavigating) bot._setNavigating(true);
           if (action === 'fly') {
             await flyTo(bot, Vec3, tx, cfg.flyAltitude, tz, cfg, mode);
           } else {
