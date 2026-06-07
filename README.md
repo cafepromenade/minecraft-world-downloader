@@ -67,9 +67,27 @@ and a bot read the chests back to confirm the items are correct **in-game**, not
   channels), plus null-safety fixes so unknown/modded block, item and entity ids no longer crash chunk
   parsing or NBT writing.
 
+### 🗺️ Mapping & automation
+- **Live map in the web console** — the overview map now renders **headless** (no GUI) into PNG region
+  tiles and is shown as a pannable/zoomable map in the browser, with a live player marker and a
+  surface/caves toggle. On by default in `--no-gui` mode; see [`bluemap/`](bluemap) for the 3D map.
+- **BlueMap 3D map pipeline** ([`bluemap/pipeline.py`](bluemap/pipeline.py)) — upgrade a downloaded
+  world with a temporary server jar (`--forceUpgrade`, auto-stopped), then render an interactive 3D web
+  map with [BlueMap](https://github.com/BlueMap-Minecraft/BlueMap). Run standalone, via the
+  `bluemap` docker-compose profile, or from the desktop manager.
+- **Mineflayer auto-scraper** ([`scraper/`](scraper)) — bots that walk/fly a grid through the proxy to
+  capture a whole area automatically: Microsoft or offline login, gamemode-aware movement
+  (creative/spectator fly, survival/adventure walk via pathfinder), multi-bot, AuthMe auto-login,
+  anti-stuck, and a visited-chunk cache so re-runs skip downloaded chunks.
+- **Accessibility & themes** — the web console has a ♿ menu (dark / light / high-contrast themes,
+  ADHD-focus / calm / easy-reading / low-vision presets, reduced motion, dyslexia font, text scaling,
+  skip links, keyboard focus) and the desktop manager has theme + large-text options.
+
 ### ✅ Verified versions
 End-to-end (Paper server + mineflayer bot through the proxy), **3/3 runs each** on **1.12.2, 1.20.4,
 1.21.8, 1.21.11**: world download, auto-open + saving of every container type, and chat auto-reply.
+The headless live map, the scraper (survival/adventure/creative, dedup, no-stuck over 5000×5000), the
+server-jar upgrade and the BlueMap render are each verified end-to-end as well.
 The player-aware chest safety has its own two-bot test, and minecart capture + the in-game load-back
 (re-open the downloaded world in a server and read the chests with a bot) are verified too.
 
