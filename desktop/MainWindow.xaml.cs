@@ -34,12 +34,20 @@ public partial class MainWindow : Window
 
     private async Task InitAsync()
     {
-        if (!await _docker.IsDockerAvailableAsync())
+        try
         {
-            SetStatus("error", "Docker not found. Install Docker Desktop and make sure it is running, then reopen this app.");
-            return;
+            if (!await _docker.IsDockerAvailableAsync())
+            {
+                SetStatus("error", "Docker not found. Install Docker Desktop and make sure it is running, then reopen this app.");
+                return;
+            }
+            await RefreshStatusAsync();
         }
-        await RefreshStatusAsync();
+        catch (Exception ex)
+        {
+            // never let the startup status check take the whole app down
+            SetStatus("error", "Could not check Docker status: " + ex.Message);
+        }
     }
 
     private static int ParsePort(string text, int fallback) =>
