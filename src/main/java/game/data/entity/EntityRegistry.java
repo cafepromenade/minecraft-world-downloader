@@ -257,6 +257,37 @@ public class EntityRegistry {
     }
 
     /**
+     * Closest container minecart (chest/hopper minecart) within {@code reach} of {@code player} that is
+     * not excluded, or null. Used by the auto-open sweep to capture minecart contents.
+     */
+    public game.data.entity.specific.ContainerMinecart findContainerMinecartNear(
+            Coordinate3D player, double reach, java.util.function.IntPredicate exclude) {
+        double bestSq = reach * reach;
+        game.data.entity.specific.ContainerMinecart best = null;
+        for (Entity e : entities.values()) {
+            if (!(e instanceof game.data.entity.specific.ContainerMinecart mc)) {
+                continue;
+            }
+            if (exclude != null && exclude.test(mc.getId())) {
+                continue;
+            }
+            double dx = mc.x - player.getX(), dy = mc.y - player.getY(), dz = mc.z - player.getZ();
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq <= bestSq) {
+                bestSq = distSq;
+                best = mc;
+            }
+        }
+        return best;
+    }
+
+    /** Mark the chunk that holds the given entity as unsaved so it is re-written (e.g. after capture). */
+    public void markEntityChunkUnsaved(Entity e) {
+        Coordinate3D pos = new Coordinate3D((int) Math.floor(e.x), (int) Math.floor(e.y), (int) Math.floor(e.z));
+        markUnsaved(pos.globalToChunk().addDimension(WorldManager.getInstance().getDimension()));
+    }
+
+    /**
      * Whether another player is within {@code radius} blocks of the given block position. Covers both
      * the legacy AddPlayer table (pre-1.20.2) and players spawned as generic entities with typeName
      * "minecraft:player" (1.20.2+). The downloading player is never in either set, so it is excluded.

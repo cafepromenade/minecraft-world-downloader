@@ -9,6 +9,7 @@ import game.data.WorldManager;
 import game.data.entity.specific.ArmorStand;
 import game.data.entity.specific.Axolotl;
 import game.data.entity.specific.Cat;
+import game.data.entity.specific.ContainerMinecart;
 import game.data.entity.specific.Horse;
 import game.data.entity.specific.DroppedItem;
 import game.data.entity.specific.ItemFrame;
@@ -50,6 +51,7 @@ public class PrimitiveEntity {
             case "minecraft:armor_stand" -> new ArmorStand();
             case "minecraft:axolotl" -> new Axolotl();
             case "minecraft:cat" -> new Cat();
+            case "minecraft:chest_minecart", "minecraft:hopper_minecart" -> new ContainerMinecart();
             case "minecraft:horse" -> new Horse();
             case "minecraft:item" -> new DroppedItem();
             case "minecraft:item_frame", "minecraft:glow_item_frame" -> new ItemFrame();

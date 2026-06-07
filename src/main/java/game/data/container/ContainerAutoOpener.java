@@ -52,6 +52,10 @@ public class ContainerAutoOpener {
      *  across restarts (this runs with restart:always, which would otherwise reset the set and
      *  re-open every container again). */
     private final Set<Long> attempted = ConcurrentHashMap.newKeySet();
+    /** Entity ids of container minecarts already attempted this session (not persisted — minecarts move). */
+    private final Set<Integer> attemptedMinecarts = ConcurrentHashMap.newKeySet();
+    /** The container minecart whose contents we are currently capturing, or null for a block container. */
+    private volatile game.data.entity.specific.ContainerMinecart pendingMinecart;
     private volatile boolean attemptedLoaded = false;
     private java.nio.file.Path persistFile;
     private volatile boolean waiting = false;
@@ -202,9 +206,29 @@ public class ContainerAutoOpener {
                 .findOpenableContainerNear(playerPos, Config.autoOpenReach(),
                         pos -> attempted.contains(keyOf(pos)) || blockedByNearbyPlayer(pos));
         if (target == null) {
+            // No block container in reach; try a container minecart (chest/hopper minecart entity).
+            game.data.entity.specific.ContainerMinecart mc = WorldManager.getInstance().getEntityRegistry()
+                    .findContainerMinecartNear(playerPos, Config.autoOpenReach(),
+                            id -> attemptedMinecarts.contains(id));
+            if (mc == null) {
+                return;
+            }
+            attemptedMinecarts.add(mc.getId());
+            // The captured window is associated with lastInteractedWith; for an entity we use its block
+            // position so the window registers, then route the contents to the minecart entity itself.
+            Coordinate3D mcPos = new Coordinate3D((int) Math.floor(mc.getX()), (int) Math.floor(mc.getY()), (int) Math.floor(mc.getZ()));
+            WorldManager.getInstance().getContainerManager().lastInteractedWith(mcPos);
+            pendingMinecart = mc;
+            sendInteract(mc.getId());
+            waiting = true;
+            pendingOpen = true;
+            pendingOpenMs = now;
+            waitStartMs = now;
+            lastOpenMs = now;
             return;
         }
 
+        pendingMinecart = null; // a block open, not a minecart
         attempted.add(keyOf(target));
         persist(target);
         // openWindow() (clientbound thread) associates the upcoming window with lastInteractedWith,
@@ -218,10 +242,33 @@ public class ContainerAutoOpener {
         lastOpenMs = now;
     }
 
+    /** The container minecart currently being captured (set just before its content arrives), or null. */
+    public game.data.entity.specific.ContainerMinecart getPendingMinecart() {
+        return pendingMinecart;
+    }
+
+    /** Inject a serverbound entity-interact to open a container minecart's inventory. */
+    private void sendInteract(int entityId) {
+        Protocol protocol = Config.versionReporter().getProtocol();
+        int packetId = protocol.serverBound("Interact");
+        if (packetId < 0 || Config.getServerBoundInjector() == null) {
+            return;
+        }
+        PacketBuilder packet = new PacketBuilder(packetId);
+        packet.writeVarInt(entityId);   // target entity id
+        packet.writeVarInt(0);          // type: interact
+        packet.writeVarInt(0);          // hand: main
+        if (Config.versionReporter().isAtLeast(Version.V1_16)) {
+            packet.writeBoolean(false); // sneaking (added in 1.16)
+        }
+        Config.getServerBoundInjector().enqueuePacket(packet);
+    }
+
     /** Called from ContainerManager when an auto-opened window's content has been captured + saved. */
     public void onContentCaptured(int windowId) {
         sendClose(windowId);
         waiting = false;
+        pendingMinecart = null;
         lastOpenMs = System.currentTimeMillis(); // start the cooldown from capture, not from open
     }
 

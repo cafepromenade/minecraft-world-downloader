@@ -233,7 +233,27 @@ public class ContainerManager {
             // then have the auto-opener close it server-side and advance to the next one.
             if (Config.autoOpenContainers()) {
                 ContainerAutoOpener opener = WorldManager.getInstance().getContainerAutoOpener();
-                if (opener.isWaiting()) {
+                if (opener.isWaiting() && opener.getPendingMinecart() != null) {
+                    // Container minecart: contents belong to the ENTITY, not a block. Attach them to the
+                    // minecart so they are written into the saved chunk's entity NBT, then log + advance.
+                    game.data.entity.specific.ContainerMinecart mc = opener.getPendingMinecart();
+                    try {
+                        mc.setItems(window.getSlotList());
+                        WorldManager.getInstance().getEntityRegistry().markEntityChunkUnsaved(mc);
+                        try {
+                            WorldManager.getInstance().getAutoOpenItemLog().log(window,
+                                    mc.getTypeName() == null ? "minecart" : mc.getTypeName().replace("minecraft:", ""),
+                                    WorldManager.getInstance().getDimension());
+                        } catch (RuntimeException logEx) {
+                            System.out.println("auto-open: failed to log minecart items: " + logEx.getMessage());
+                        }
+                    } catch (RuntimeException ex) {
+                        System.out.println("auto-open: failed to capture minecart " + windowId + ": " + ex.getMessage());
+                    } finally {
+                        knownWindows.remove(windowId);
+                        opener.onContentCaptured(windowId);
+                    }
+                } else if (opener.isWaiting()) {
                     try {
                         closeWindow(windowId);
                         // Saved OK — record what we just captured (auto-open only). Uses the retained

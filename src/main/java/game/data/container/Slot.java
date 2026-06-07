@@ -1,8 +1,11 @@
 package game.data.container;
 
+import config.Config;
+import config.Version;
 import game.data.registries.RegistryManager;
 import se.llbit.nbt.ByteTag;
 import se.llbit.nbt.CompoundTag;
+import se.llbit.nbt.IntTag;
 import se.llbit.nbt.SpecificTag;
 import se.llbit.nbt.StringTag;
 
@@ -47,10 +50,18 @@ public class Slot {
     public CompoundTag toNbt() {
         CompoundTag tag = new CompoundTag();
         tag.add("id", new StringTag(RegistryManager.getInstance().getItemRegistry().getItemName(itemId)));
-        tag.add("Count", new ByteTag(count));
 
-        if (nbt instanceof CompoundTag) {
-            tag.add("tag", nbt);
+        // 1.20.5 reworked the item NBT format: the stack size moved from "Count" (byte) to "count" (int)
+        // and item data moved from "tag" into "components". Writing the old keys to a 1.20.5+ world makes
+        // the client read a default count of 1 (so saved containers looked almost empty in-game). Match
+        // the world's format; we don't reconstruct data components, so only id + count are written there.
+        if (Config.versionReporter().isAtLeast(Version.V1_20_6)) {
+            tag.add("count", new IntTag(count));
+        } else {
+            tag.add("Count", new ByteTag(count));
+            if (nbt instanceof CompoundTag) {
+                tag.add("tag", nbt);
+            }
         }
         return tag;
     }
