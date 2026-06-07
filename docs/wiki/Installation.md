@@ -4,9 +4,9 @@
 - **Java 21 or higher** (to run the jar) — or **Docker** (no Java needed on the host).
 - A supported Minecraft version — see [Supported Versions](Supported-Versions) (1.8 → 26.1).
 
-## Option 1 — Windows launcher (easiest)
-Download [`world-downloader-launcher.exe`](https://github.com/cafepromenade/minecraft-world-downloader-launcher/releases/latest/download/world-downloader-launcher.exe)
-and run it. Enter the server address and press **Start**, then connect to `localhost` in Minecraft.
+## Option 1 — Windows desktop manager (easiest)
+Download [`WorldDownloaderManager-Setup.exe`](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/WorldDownloaderManager-Setup.exe)
+and run the installer. Enter the server address and press **Start**, then connect to `localhost` in Minecraft.
 
 ## Option 2 — Cross-platform jar
 Download [`world-downloader.jar`](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/world-downloader.jar)

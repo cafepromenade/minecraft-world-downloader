@@ -92,12 +92,12 @@ Full guides are in [**`docs/wiki/`**](docs/wiki) (also published to the project
 [FAQ](docs/wiki/FAQ.md)
 
 ### Downloads  <a href="https://github.com/cafepromenade/minecraft-world-downloader/releases/latest"><img align="right" src="https://img.shields.io/github/downloads/cafepromenade/minecraft-world-downloader/total.svg"></a>
-Windows launcher: [world-downloader-launcher.exe](https://github.com/cafepromenade/minecraft-world-downloader-launcher/releases/latest/download/world-downloader-launcher.exe)
+Windows desktop manager (installer): [WorldDownloaderManager-Setup.exe](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/WorldDownloaderManager-Setup.exe)
 
 Latest cross-platform jar (command-line support): [world-downloader.jar](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/world-downloader.jar)
 
 ### Basic usage
-[Download](https://github.com/cafepromenade/minecraft-world-downloader-launcher/releases/latest/download/world-downloader-launcher.exe) the latest release and run it. Enter the server address in the address field and press start.
+[Download](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/WorldDownloaderManager-Setup.exe) the Windows desktop manager and run it. Enter the server address in the address field and press start.
 
 <img src="https://i.imgur.com/yH8SH5C.png">
 
