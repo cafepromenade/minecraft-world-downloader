@@ -43,7 +43,28 @@ node scrape.js --config config.json
 | `arriveRadius`, `waypointTimeoutMs`, `loadWaitMs` | navigation tuning (arrival distance, per-waypoint timeout, dwell time so the proxy captures the chunk) |
 | `visitedFile` | where visited chunks are remembered |
 | `revisit` | `true` ignores the visited cache and re-walks everything |
+| `containerDwellMs` | extra pause per chunk so the proxy can auto-open + save nearby containers (use with the downloader's `--auto-open-containers`) |
+| `finalDrainMs` | after finishing the grid, stay connected this long so the proxy flushes pending chunk/container saves before disconnecting ("wait till all containers are saved"). The downloader also saves everything on disconnect. |
 | `loginStaggerMs` | delay between starting each bot |
+
+## Capturing containers while scraping
+
+Run the downloader with `--auto-open-containers` so it opens and saves containers as the bots pass by.
+Set `containerDwellMs` (e.g. 400–800) so each chunk is dwelt on long enough for the open+save, and keep
+`finalDrainMs` non-zero so the last saves are flushed before the bots leave.
+
+## Large areas (e.g. 3000×3000)
+
+The area is just `radius`/`bbox` in blocks, so a 3000×3000 scrape is `"bbox": {"minX":-1500,"minZ":-1500,
+"maxX":1500,"maxZ":1500}` (~35k chunks). Notes:
+
+- **Walking** (survival/adventure) a 3000×3000 area is many hours of real time. Use **multiple bots**
+  (the grid is partitioned across them) to cut it down, and lower `loadWaitMs`.
+- **Flying** (creative/spectator) is far faster for large areas; prefer it when the gamemode allows.
+- The visited cache means you can stop and resume — re-runs skip what's already downloaded.
+
+Verified: scraping works in **survival** and **adventure** (pathfinder walking) and in
+**creative/spectator** (flight), with download + visited-dedup confirmed end-to-end.
 
 ## Gamemode awareness
 

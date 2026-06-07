@@ -69,6 +69,10 @@ function loadConfig() {
     // dedup
     visitedFile: 'visited.json',
     revisit: false,              // ignore the visited cache and re-walk everything
+    // container capture: dwell extra at each chunk so the proxy can auto-open + save nearby
+    // containers, and drain at the end so pending chunk/container saves are flushed before quitting.
+    containerDwellMs: 0,         // extra pause per chunk (add when --auto-open-containers is on)
+    finalDrainMs: 6000,          // wait after the grid (per bot) so the proxy finishes saving
     // misc
     loginStaggerMs: 4000,        // delay between starting each bot
     auth: undefined,
@@ -237,7 +241,7 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
           } else {
             await walkTo(bot, pf, tx, tz, cfg);
           }
-          await sleep(cfg.loadWaitMs);
+          await sleep(cfg.loadWaitMs + (cfg.containerDwellMs || 0));
         } catch (e) {
           // couldn't reach this chunk; mark visited anyway so we don't loop on it forever
         }
@@ -247,6 +251,12 @@ function runBot(cfg, account, index, allTargets, botCount, visited) {
       }
 
       visited.flush();
+      // Stay connected a moment so the proxy can flush pending chunk + auto-opened-container saves
+      // before we disconnect ("wait till all containers are saved").
+      if (cfg.finalDrainMs > 0) {
+        console.log(tag, `draining ${cfg.finalDrainMs}ms so the proxy saves remaining chunks/containers...`);
+        await sleep(cfg.finalDrainMs);
+      }
       console.log(tag, `done — visited ${visitedCount} chunks`);
       stopped = true;
       try { bot.quit('scrape complete'); } catch (_) {}
