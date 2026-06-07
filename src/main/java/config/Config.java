@@ -453,8 +453,8 @@ public class Config {
     public boolean autoOpenAllowChestNearPlayers = false;
 
     @Option(name = "--auto-open-player-radius",
-            usage = "Radius (blocks) for the chest 'other player nearby' check (default 16).")
-    public double autoOpenPlayerRadius = 16.0;
+            usage = "Radius (blocks) for the chest 'other player nearby' check (default 100).")
+    public double autoOpenPlayerRadius = 100.0;
 
     @Option(name = "--auto-open-gamemodes",
             usage = "Which gamemodes the auto-open sweep runs in: 'all' (default, any mode incl. survival), "

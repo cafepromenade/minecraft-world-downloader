@@ -34,7 +34,7 @@ and a bot read the chests back to confirm the items are correct **in-game**, not
   combination works. Works on legacy (pre-1.19) and modern (signed-chat) protocols. Enable with
   `--auto-reply --auto-reply-trigger "<text>"`.
 - **🛡️ Player-aware chest safety (on by default).** The sweep will **not** open a chest / trapped chest
-  / barrel while another player is within `--auto-open-player-radius` (default 16). All other container
+  / barrel while another player is within `--auto-open-player-radius` (default 100). All other container
   types still open. Pass `--auto-open-allow-chest-near-players` to disable the check.
 
 ### 🐛 Fixes
