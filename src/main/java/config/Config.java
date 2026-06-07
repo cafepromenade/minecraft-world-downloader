@@ -416,12 +416,18 @@ public class Config {
     public boolean autoOpenContainers = false;
 
     @Option(name = "--auto-open-delay",
-            usage = "Minimum milliseconds between auto-opened containers (default 700). Higher = safer.")
-    public int autoOpenDelayMs = 700;
+            usage = "Minimum milliseconds between auto-opened containers (default 600). Higher = safer.")
+    public int autoOpenDelayMs = 600;
 
     @Option(name = "--auto-open-reach",
             usage = "Max distance (blocks) to a container for auto-open; keep at/below survival reach (default 4.0).")
     public double autoOpenReach = 4.0;
+
+    @Option(name = "--auto-open-state",
+            usage = "File that records which containers were already auto-opened, so a block is never "
+                    + "re-opened (even across restarts). Default: 'auto-open-attempted.txt' beside the world "
+                    + "folder (outside it, so it persists on the host). Set an absolute path to store it anywhere.")
+    public String autoOpenStateFile = "";
 
     @Option(name = "--auto-open-gamemodes",
             usage = "Which gamemodes the auto-open sweep runs in: 'all' (default, any mode incl. survival), "
@@ -508,6 +514,8 @@ public class Config {
     public static int autoOpenDelayMs() { return Math.max(50, instance.autoOpenDelayMs); }
 
     public static double autoOpenReach() { return instance.autoOpenReach; }
+
+    public static String autoOpenStateFile() { return instance.autoOpenStateFile; }
 
     /**
      * Allowed gamemodes for the auto-open sweep, or null for "all gamemodes" (no gate).

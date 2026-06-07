@@ -111,12 +111,35 @@ public class ContainerManager {
     }
 
     private void sendInventorySavedMessage(InventoryWindow window) {
-        if (Config.sendInfoMessages()) {
-            Chat message = new Chat("Hui Downloader saved inventory at " + window.getContainerLocation());
-            message.setColor("green");
-            // Show only on the action bar (above the hotbar), not in the chat box.
-            Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
+        if (!Config.sendInfoMessages() || Config.getPacketInjector() == null) {
+            return;
         }
+        Coordinate3D pos = window.getContainerLocation();
+
+        // Number of items = non-empty container slots (empty slots are read as null; player-inventory
+        // slots are already excluded by InventoryWindow#setSlots).
+        int count = 0;
+        if (window.getSlotList() != null) {
+            for (Slot s : window.getSlotList()) {
+                if (s != null) { count++; }
+            }
+        }
+
+        // Container type from the block at the captured location (e.g. "chest", "barrel", "hopper").
+        String type = "container";
+        Chunk c = WorldManager.getInstance().getChunk(
+                pos.globalToChunk().addDimension(WorldManager.getInstance().getDimension()));
+        if (c != null) {
+            BlockState bs = c.getBlockStateAt(pos.withinChunk());
+            if (bs != null && bs.getName() != null) {
+                type = bs.getName().replace("minecraft:", "");
+            }
+        }
+
+        Chat message = new Chat(type + " - (" + count + ") " + pos.getX() + " " + pos.getY() + " " + pos.getZ());
+        message.setColor("green");
+        // Show only on the action bar (above the hotbar), not in the chat box.
+        Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(message, MessageTarget.GAMEINFO));
     }
 
 

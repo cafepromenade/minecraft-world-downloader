@@ -4,8 +4,6 @@ import config.Config;
 import game.data.WorldManager;
 import game.data.coordinates.Coordinate3D;
 import game.protocol.Protocol;
-import packets.builder.Chat;
-import packets.builder.MessageTarget;
 import packets.builder.PacketBuilder;
 
 import java.util.Set;
@@ -48,8 +46,13 @@ public class ContainerAutoOpener {
             "minecraft:brewing_stand", "minecraft:crafter", "minecraft:lectern"
     );
 
-    /** Positions we have already attempted (captured, blocked, or unopenable) — never retried. */
-    private final Set<Coordinate3D> attempted = ConcurrentHashMap.newKeySet();
+    /** Packed (class-independent) keys of positions we have already attempted (captured, blocked, or
+     *  unopenable) — never retried. Persisted per-world so a block is opened at most once EVER, even
+     *  across restarts (this runs with restart:always, which would otherwise reset the set and
+     *  re-open every container again). */
+    private final Set<Long> attempted = ConcurrentHashMap.newKeySet();
+    private volatile boolean attemptedLoaded = false;
+    private java.nio.file.Path persistFile;
     private volatile boolean waiting = false;
     /** Set when we inject an open; the matching clientbound OpenScreen is swallowed so the client GUI
      *  never opens (a player cannot move while a container GUI is open, which would stall the sweep). */
@@ -62,6 +65,71 @@ public class ContainerAutoOpener {
 
     public static boolean isOpenable(String blockName) {
         return blockName != null && (OPENABLE.contains(blockName) || blockName.endsWith("_shulker_box"));
+    }
+
+    /** Class-independent key for a block position: pack x(26)|y(12)|z(26). Unique per (x,y,z). */
+    private static long keyOf(Coordinate3D c) {
+        return ((long) (c.getX() & 0x3FFFFFF) << 38)
+             | ((long) (c.getY() & 0xFFF) << 26)
+             | ((long) (c.getZ() & 0x3FFFFFF));
+    }
+
+    /** Lazily load the persisted attempted-set (per world) so a block is never re-opened after a restart. */
+    private void ensureLoaded() {
+        if (attemptedLoaded) {
+            return;
+        }
+        synchronized (this) {
+            if (attemptedLoaded) {
+                return;
+            }
+            try {
+                // Where to persist the "already opened" set. Default: a file BESIDE the world folder
+                // (its parent dir) rather than inside it — that parent is the bind-mounted host dir, so
+                // the state lives outside Docker's ephemeral layer and outside the world data itself.
+                String custom = Config.autoOpenStateFile();
+                if (custom != null && !custom.isEmpty()) {
+                    persistFile = java.nio.file.Paths.get(custom);
+                } else {
+                    String dir = Config.getWorldOutputDir();
+                    if (dir != null && !dir.isEmpty()) {
+                        java.nio.file.Path world = java.nio.file.Paths.get(dir).toAbsolutePath();
+                        java.nio.file.Path parent = world.getParent();
+                        persistFile = (parent != null ? parent : world).resolve("auto-open-attempted.txt");
+                    }
+                }
+                if (persistFile != null && java.nio.file.Files.exists(persistFile)) {
+                    for (String line : java.nio.file.Files.readAllLines(persistFile)) {
+                        String[] p = line.trim().split("\\s+");
+                        if (p.length >= 3) {
+                            try {
+                                attempted.add(keyOf(new Coordinate3D(
+                                        Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2]))));
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Best-effort: never let persistence block or break the download.
+            }
+            attemptedLoaded = true;
+        }
+    }
+
+    /** Append a newly-attempted position so it is never opened again, even after a restart. */
+    private void persist(Coordinate3D pos) {
+        if (persistFile == null) {
+            return;
+        }
+        try {
+            java.nio.file.Files.write(persistFile,
+                    (pos.getX() + " " + pos.getY() + " " + pos.getZ() + "\n")
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            // Best-effort.
+        }
     }
 
     public void setLastSequence(int sequence) {
@@ -95,6 +163,7 @@ public class ContainerAutoOpener {
         if (!Config.autoOpenContainers() || playerPos == null) {
             return;
         }
+        ensureLoaded();
         // Gamemode gate. Config.autoOpenGamemodes() == null means "all gamemodes" (no gate — runs even
         // before the gamemode is known, so it works in survival on join without toggling). A non-null
         // set restricts to those gamemodes; an unknown gamemode (-1) is never in the set, so a
@@ -118,12 +187,13 @@ public class ContainerAutoOpener {
         }
 
         Coordinate3D target = WorldManager.getInstance()
-                .findOpenableContainerNear(playerPos, Config.autoOpenReach(), attempted::contains);
+                .findOpenableContainerNear(playerPos, Config.autoOpenReach(), pos -> attempted.contains(keyOf(pos)));
         if (target == null) {
             return;
         }
 
-        attempted.add(target);
+        attempted.add(keyOf(target));
+        persist(target);
         // openWindow() (clientbound thread) associates the upcoming window with lastInteractedWith,
         // and since we inject the open packet (the proxy never parses it) we must set it ourselves.
         WorldManager.getInstance().getContainerManager().lastInteractedWith(target);
@@ -163,20 +233,8 @@ public class ContainerAutoOpener {
         packet.writeBoolean(false);     // head inside block
         packet.writeVarInt(lastSequence); // block-change sequence (MC 1.19+)
         Config.getServerBoundInjector().enqueuePacket(packet);
-
-        // Diagnostic: show on the action bar that the sweep is actively trying to open this container.
-        // If you see this but no "saved inventory" follows, the server is rejecting our open; if you
-        // never see it while moving near chests, the sweep isn't finding/targeting them.
-        announce("auto-open ⟳ " + pos.getX() + " " + pos.getY() + " " + pos.getZ(), "yellow");
-    }
-
-    private void announce(String text, String color) {
-        if (!Config.sendInfoMessages() || Config.getPacketInjector() == null) {
-            return;
-        }
-        Chat msg = new Chat(text);
-        msg.setColor(color);
-        Config.getPacketInjector().enqueuePacket(PacketBuilder.constructClientMessage(msg, MessageTarget.GAMEINFO));
+        // The per-container action-bar line is shown on capture (with the item count), in
+        // ContainerManager#sendInventorySavedMessage, formatted as "<type> - (<items>) <x> <y> <z>".
     }
 
     private void sendClose(int windowId) {
