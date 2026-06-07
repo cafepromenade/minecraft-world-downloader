@@ -16,3 +16,22 @@ services:
       # SECRET_KEY: "set-a-long-random-string"   # only used when login is enabled
     volumes:
       - ./data:/data     # downloaded worlds, registry cache, and saved manager settings
+
+  # Optional: render the downloaded world into an interactive 3D web map with BlueMap.
+  # Enable with:  docker compose --profile bluemap up -d bluemap
+  # Renders ./data/world, then serves the map at http://localhost:8100.
+  bluemap:
+    build:
+      context: .
+      dockerfile: bluemap/Dockerfile
+    image: minecraft-world-downloader-bluemap
+    container_name: minecraft-world-downloader-bluemap
+    profiles: ["bluemap"]
+    restart: unless-stopped
+    ports:
+      - "8100:8100"      # BlueMap 3D web map -> http://localhost:8100
+    environment:
+      WORLD_DIR: "/data/world"     # the downloaded world to render
+      BLUEMAP_PORT: "8100"
+    volumes:
+      - ./data:/data
