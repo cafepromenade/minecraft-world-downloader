@@ -56,3 +56,4 @@ TEST_RESULTS.txt
 # Python bytecode caches
 __pycache__/
 *.pyc
+desktop/publish-test/
