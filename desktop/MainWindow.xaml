@@ -262,6 +262,8 @@
                                 ToolTip="Open the console website (http://localhost:&lt;web port&gt;) in your default browser." />
                         <Button x:Name="PullBtn" Style="{StaticResource Btn}" Content="Update image" Margin="10,0,0,0" Click="Pull_Click"
                                 ToolTip="Download the latest version of the Docker image from the registry." />
+                        <Button x:Name="ComposeBtn" Style="{StaticResource Btn}" Content="Generate compose" Margin="10,0,0,0" Click="GenerateCompose_Click"
+                                ToolTip="Write a docker-compose.yml for the current settings into the data folder." />
                     </StackPanel>
                     <ProgressBar x:Name="Busy" Height="3" Margin="0,12,0,0" IsIndeterminate="True"
                                  Visibility="Collapsed" Background="{StaticResource Outline}" Foreground="{StaticResource Accent}" BorderThickness="0" />

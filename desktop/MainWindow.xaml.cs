@@ -165,6 +165,24 @@ public partial class MainWindow : Window
         finally { Busying(false); }
     }
 
+    private void GenerateCompose_Click(object sender, RoutedEventArgs e)
+    {
+        SaveFromUi();
+        if (string.IsNullOrWhiteSpace(_settings.DataFolder))
+        {
+            SetStatus("warn", "Pick a data folder first — the docker-compose.yml is written there.");
+            return;
+        }
+        try
+        {
+            var path = _settings.WriteDockerCompose();
+            AppendLog("Wrote " + path);
+            SetStatus("success", "docker-compose.yml written to the data folder. Run it with: docker compose up -d");
+            try { Process.Start(new ProcessStartInfo(_settings.DataFolder) { UseShellExecute = true }); } catch { /* ignore */ }
+        }
+        catch (Exception ex) { SetStatus("error", "Could not write docker-compose.yml: " + ex.Message); }
+    }
+
     private void Open_Click(object sender, RoutedEventArgs e) => OpenConsole();
 
     private void OpenConsole()

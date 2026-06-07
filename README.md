@@ -24,14 +24,21 @@ inspected to confirm the items were written).
   `auto-open-items.log` (beside the world folder) listing the type, coordinates and items, e.g.
   `minecraft:overworld chest @ 12 -60 5 (3 stacks, 81 items)` → `minecraft:diamond x12`. Customize the
   path with `--auto-open-log`.
-- **💬 Chat auto-reply.** When an incoming chat message's **yellow** text matches a configured trigger,
-  the proxy replies with that message's **red** text. Works on legacy (pre-1.19) and modern
-  (signed-chat) protocols. Enable with `--auto-reply --auto-reply-trigger "<yellow text>"`.
+- **💬 Chat auto-reply.** When an incoming chat message's trigger-coloured text matches a configured
+  trigger, the proxy replies with that message's reply-coloured text. Colours default to **yellow →
+  red** but are configurable (`--auto-reply-trigger-color` / `--auto-reply-color`) so any colour
+  combination works. Works on legacy (pre-1.19) and modern (signed-chat) protocols. Enable with
+  `--auto-reply --auto-reply-trigger "<text>"`.
 - **🛡️ Player-aware chest safety (on by default).** The sweep will **not** open a chest / trapped chest
   while another player is within `--auto-open-player-radius` (default 16). All other container types
   still open. Pass `--auto-open-allow-chest-near-players` to disable the check.
 
 ### 🐛 Fixes
+- **1.21.5+ world download was broken** (chunks failed to parse → 0 chunks saved): 1.21.5 removed the
+  per-array "data length" varint from paletted containers; the long count is now derived from
+  bits-per-entry. Verified downloading + saving on 1.21.8 and 1.21.11.
+- **Auto-open kicked you on 1.21.3+**: the serverbound *Use Item On* packet gained a `worldBorderHit`
+  boolean that the injected open omitted ("Failed to decode use_item_on"). Now written/parsed on 1.21.3+.
 - **Auto-open never worked on 1.14+**: the injected open used the pre-1.14 block-position bit layout, so
   modern servers silently ignored it. Now version-correct (`x<<38 | z<<12 | y` on 1.14+).
 - **1.14–1.18 auto-open** wrote a stray block-change sequence field (a 1.19+ addition), corrupting the
@@ -41,12 +48,16 @@ inspected to confirm the items were written).
   distinguished in the log.
 - **1.12.2 auto-open** now uses the correct pre-1.14 *Player Block Placement* packet layout.
 
+### ✅ Verified versions
+End-to-end (Paper server + mineflayer bot through the proxy), run repeatedly: **1.12.2, 1.20.4,
+1.21.8, 1.21.11** — world download, auto-open + saving of all block container types (saved region NBT
+inspected), and chat auto-reply.
+
 ### ⚠️ Known limitations
 - **Minecart containers** (chest/hopper minecarts) are entity-based and are **not yet** auto-opened.
-- **1.21.5+ chunk download/auto-open**: a pre-existing chunk-section parse error blocks chunk capture
-  on 1.21.5 and later (chat auto-reply still works). 1.20.x and 1.21.0–1.21.4 are unaffected.
-- **26.1.2** cannot be tested with a bot yet — mineflayer/minecraft-data have no 26.x protocol data
-  (`unsupported protocol version: 26.1.2`). The proxy's static 26.1 mapping is in place.
+- **26.1.2** cannot be exercised by a bot yet — mineflayer/minecraft-data have no 26.x protocol data
+  (`unsupported protocol version: 26.1.2`). The proxy's 26.1 mapping reuses the verified 1.21.5+ chunk
+  path, so the same code is covered by the 1.21.8/1.21.11 tests.
 - On 1.12.2, **furnaces and brewing stands** aren't auto-opened (their block state resolves to a null
   name in the bundled 1.12 block registry).
 
