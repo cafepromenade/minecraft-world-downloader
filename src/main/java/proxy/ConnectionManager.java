@@ -9,6 +9,8 @@ import game.protocol.LoginProtocol;
 import game.protocol.StatusProtocol;
 import packets.DataReader;
 import packets.handler.*;
+import packets.handler.plugins.PluginChannelHandler;
+import proxy.voicechat.VoiceProxyManager;
 
 /**
  * Class to manage the connection status.
@@ -85,6 +87,9 @@ public class ConnectionManager {
         clientBoundDataReader.reset();
         setMode(NetworkMode.HANDSHAKE);
         WorldManager.getInstance().resetConnection();
+        // free voice UDP relays and re-select the version-specific plugin-channel handler on reconnect
+        VoiceProxyManager.getInstance().reset();
+        PluginChannelHandler.reset();
     }
 
     public EncryptionManager getEncryptionManager() {

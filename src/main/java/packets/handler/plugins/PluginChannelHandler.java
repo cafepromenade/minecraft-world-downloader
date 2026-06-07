@@ -4,6 +4,7 @@ import config.Config;
 import config.Option;
 import config.Version;
 import packets.DataTypeProvider;
+import proxy.voicechat.VoiceProxyManager;
 
 public abstract class PluginChannelHandler {
 
@@ -19,18 +20,25 @@ public abstract class PluginChannelHandler {
         return instance;
     }
 
-    public abstract void handleCustomPayload(DataTypeProvider provider);
+    /**
+     * Handle an incoming CustomPayload packet from the server.
+     *
+     * @return true  -> forward the original packet to the client unchanged
+     *         false -> drop the original (a replacement may have been injected)
+     */
+    public abstract boolean handleCustomPayload(DataTypeProvider provider);
+
+    public static void reset() {
+        instance = null;
+    }
 }
 
 class DefaultPluginChannelHandler extends PluginChannelHandler {
     @Override
-    public void handleCustomPayload(DataTypeProvider provider) {
-        // 1.13+ namespaced channel (e.g. "forge:handshake", "fml:handshake", "neoforge:..."). We only
-        // consume the channel id; reading it keeps the stream aligned and lets modern plugin channels
-        // (Forge/NeoForge on 1.20.6/1.21) be observed by subclasses/hooks (e.g. voice-chat detection).
-        try {
-            provider.readString();
-        } catch (Exception ignored) {
-        }
+    public boolean handleCustomPayload(DataTypeProvider provider) {
+        // 1.13+ namespaced channel (e.g. "forge:handshake", "minecraft:brand", a voice-chat channel).
+        // The voice proxy may rewrite + re-inject the packet (returning false to drop the original).
+        String channel = provider.readString();
+        return VoiceProxyManager.getInstance().handleChannel(channel, provider);
     }
 }

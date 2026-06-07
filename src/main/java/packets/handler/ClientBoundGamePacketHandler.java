@@ -231,10 +231,10 @@ public class ClientBoundGamePacketHandler extends PacketHandler {
             return true;
         });
 
-        operations.put("CustomPayload", provider -> {
-            PluginChannelHandler.getInstance().handleCustomPayload(provider);
-            return true;
-        });
+        operations.put("CustomPayload", provider ->
+            // false => drop the original (the voice proxy re-injected a rewritten packet)
+            PluginChannelHandler.getInstance().handleCustomPayload(provider)
+        );
 
         operations.put("SetChunkCacheRadius", provider -> {
             int dist = provider.readVarInt();

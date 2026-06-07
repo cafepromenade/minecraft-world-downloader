@@ -536,6 +536,12 @@ public class Config {
             usage = "Enable automatically switching to cave render mode when underground.")
     public boolean enableCaveRenderMode = false;
 
+    @Option(name = "--enable-voice-proxy",
+            usage = "Transparently proxy Simple Voice Chat / PlasmoVoice UDP traffic through localhost so "
+                    + "voice works while connected via the downloader proxy. Auto-detects the voice port "
+                    + "from plugin-channel packets and rewrites the advertised host to the proxy.")
+    public boolean enableVoiceProxy = false;
+
     // not really important enough to have an option for, can change it in config file
     public boolean smoothZooming = true;
 
@@ -685,6 +691,8 @@ public class Config {
     public static boolean markOldChunks() {
         return instance.markOldChunks;
     }
+    public static boolean enableVoiceProxy() { return instance.enableVoiceProxy; }
+
     public static boolean enableCaveRenderMode() {
         return instance.enableCaveRenderMode;
     }
