@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
     <div class="brand"><span class="pick">⛏️</span> World Downloader <span class="muted">console</span></div>
     <div class="topbar-right">
@@ -20,7 +21,7 @@
     </div>
 </header>
 
-<main class="layout">
+<main class="layout" id="main">
     <section class="panel config-panel">
         <!-- ---------------- Minecraft account ---------------- -->
         <div class="account-card reveal">
@@ -281,5 +282,6 @@ loadAuth(); loadWorldInfo(); poll();
 setInterval(poll, 1500);
 setInterval(loadWorldInfo, 5000);
 </script>
+<script src="{{ url_for('static', filename='a11y.js') }}"></script>
 </body>
 </html>

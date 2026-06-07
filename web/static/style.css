@@ -247,3 +247,138 @@ legend { padding: 0 10px; color: var(--primary); font-weight: 700; font-size: 12
 
 /* visible description under a toggle, indented to align past the switch */
 .field-bool .help { margin-left: 56px; margin-top: 2px; }
+
+/* ============================================================================
+   Accessibility & theming
+   Toggles are applied as data-* attributes on <html> by a11y.js and persisted.
+   ============================================================================ */
+
+/* ---- Light theme ---- */
+html[data-theme="light"] {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface-2: #eef2f8;
+    --surface-3: #e3e9f2;
+    --outline: #c7d0de;
+    --text: #16202e;
+    --muted: #51607a;
+    --primary: #1a9e5b;
+    --primary-700: #137c47;
+    --on-primary: #ffffff;
+    --blue: #1769c2;
+    --danger: #c4322d;
+    --amber: #9a6a00;
+    --shadow-1: 0 1px 2px rgba(20,30,50,.10);
+    --shadow-2: 0 4px 10px rgba(20,30,50,.12);
+    --shadow-3: 0 12px 30px rgba(20,30,50,.16);
+}
+html[data-theme="light"] body::before { opacity: .35; }
+
+/* ---- High-contrast theme (WCAG AAA-leaning) ---- */
+html[data-theme="contrast"] {
+    --bg: #000000;
+    --surface: #000000;
+    --surface-2: #0a0a0a;
+    --surface-3: #141414;
+    --outline: #ffffff;
+    --text: #ffffff;
+    --muted: #f0f0f0;
+    --primary: #00e676;
+    --primary-700: #00c853;
+    --on-primary: #000000;
+    --blue: #4db6ff;
+    --danger: #ff6b6b;
+    --amber: #ffd54f;
+}
+html[data-theme="contrast"] * { border-color: var(--outline) !important; }
+html[data-theme="contrast"] body::before { display: none; }
+html[data-theme="contrast"] .btn,
+html[data-theme="contrast"] input,
+html[data-theme="contrast"] select { border: 2px solid var(--outline) !important; }
+
+/* ---- Always-visible, strong focus outline (keyboard accessibility) ---- */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--blue) !important;
+    outline-offset: 2px !important;
+    border-radius: 6px;
+}
+
+/* ---- Reduced motion (ADHD / autism / vestibular) ---- */
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] body::before {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+/* ---- Calm mode (autism-friendly): no glow/pulse, muted saturation, flat surfaces ---- */
+html[data-calm="on"] { filter: saturate(0.8); }
+html[data-calm="on"] *,
+html[data-calm="on"] body::before {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+}
+html[data-calm="on"] body::before { display: none; }
+
+/* ---- Focus mode (ADHD): de-emphasise everything except the hovered/focused card ---- */
+html[data-focus="on"] .panel { opacity: .55; transition: opacity .2s ease; }
+html[data-focus="on"] .panel:hover,
+html[data-focus="on"] .panel:focus-within { opacity: 1; }
+
+/* ---- Dyslexia-friendly reading ---- */
+html[data-font="dyslexic"] body,
+html[data-font="dyslexic"] input,
+html[data-font="dyslexic"] select,
+html[data-font="dyslexic"] button,
+html[data-font="dyslexic"] textarea {
+    font-family: "Atkinson Hyperlegible", "Comic Sans MS", Verdana, Tahoma, sans-serif !important;
+    letter-spacing: .04em;
+    word-spacing: .12em;
+    line-height: 1.7;
+}
+html[data-font="dyslexic"] p, html[data-font="dyslexic"] .help, html[data-font="dyslexic"] .hint {
+    max-width: 70ch;
+}
+
+/* ---- Text scaling ---- */
+html[data-scale="large"]  { font-size: 18px; }
+html[data-scale="xlarge"] { font-size: 21px; }
+
+/* ---- Skip-to-content link ---- */
+.skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 1000;
+    background: var(--primary); color: var(--on-primary); padding: 10px 16px;
+    border-radius: 0 0 8px 0; font-weight: 600; text-decoration: none;
+}
+.skip-link:focus { left: 0; }
+
+/* ---- Accessibility menu (built by a11y.js) ---- */
+.a11y-fab {
+    position: fixed; right: 16px; bottom: 16px; z-index: 900;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--primary); color: var(--on-primary); border: none;
+    font-size: 26px; cursor: pointer; box-shadow: var(--shadow-2);
+    display: flex; align-items: center; justify-content: center;
+}
+.a11y-panel {
+    position: fixed; right: 16px; bottom: 78px; z-index: 901;
+    width: 300px; max-width: calc(100vw - 32px); max-height: 80vh; overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--outline); border-radius: 14px;
+    box-shadow: var(--shadow-3); padding: 14px 16px; display: none;
+}
+.a11y-panel.open { display: block; }
+.a11y-panel h3 { margin: 0 0 4px; font-size: 16px; }
+.a11y-panel .a11y-sub { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+.a11y-row { margin: 10px 0; }
+.a11y-row > label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.a11y-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.a11y-seg button {
+    flex: 1 1 auto; min-width: 64px; padding: 7px 8px; font-size: 13px; cursor: pointer;
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--outline); border-radius: 9px;
+}
+.a11y-seg button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); font-weight: 600; }
+.a11y-reset { margin-top: 8px; width: 100%; }
