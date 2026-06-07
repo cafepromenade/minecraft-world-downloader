@@ -56,6 +56,17 @@ and a bot read the chests back to confirm the items are correct **in-game**, not
   distinguished in the log.
 - **1.12.2 auto-open** now uses the correct pre-1.14 *Player Block Placement* packet layout.
 
+### 🔌 Also ported from [TheHecateII's fork](https://github.com/TheHecateII/minecraft-world-downloader)
+- **Player skin-heads on the map** — other players render as their Minecraft head (face + hat) instead
+  of a dot, with a memory + disk skin cache and async Mojang fetch (gated by `--render-players`).
+- **Modded block colours** — non-`minecraft:` blocks are coloured on the map from their mod-JAR
+  texture (in `.minecraft/mods`), falling back to a deterministic per-name colour (`--modded-block-colors`).
+- **Voice-chat UDP proxy** — `--enable-voice-proxy` transparently relays Simple Voice Chat / PlasmoVoice
+  so voice works through the downloader (auto-detects the voice port from plugin-channel packets).
+- **Modded/1.21 hardening** — clientbound `CustomPayload` mapped for 1.20.6/1.21 (Forge/NeoForge plugin
+  channels), plus null-safety fixes so unknown/modded block, item and entity ids no longer crash chunk
+  parsing or NBT writing.
+
 ### ✅ Verified versions
 End-to-end (Paper server + mineflayer bot through the proxy), **3/3 runs each** on **1.12.2, 1.20.4,
 1.21.8, 1.21.11**: world download, auto-open + saving of every container type, and chat auto-reply.
