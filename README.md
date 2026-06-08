@@ -78,7 +78,12 @@ and a bot read the chests back to confirm the items are correct **in-game**, not
 - **Mineflayer auto-scraper** ([`scraper/`](scraper)) — bots that walk/fly a grid through the proxy to
   capture a whole area automatically: Microsoft or offline login, gamemode-aware movement
   (creative/spectator fly, survival/adventure walk via pathfinder), multi-bot, AuthMe auto-login,
-  anti-stuck, and a visited-chunk cache so re-runs skip downloaded chunks.
+  anti-stuck, a center-out spiral so it covers near you first, and a visited-chunk cache so re-runs skip
+  downloaded chunks. **Launchable from both the web console and the desktop manager** (the Microsoft
+  device-code sign-in is shown right in the web UI).
+- **Smoother extended render distance** — re-sent chunks are delivered at a steady, nearest-first pace
+  (`--extended-render-pace`, default 6 ms) instead of in bursts, so the extended area fills in without
+  the choppy pop-in.
 - **Accessibility & themes** — the web console has a ♿ menu (dark / light / high-contrast themes,
   ADHD-focus / calm / easy-reading / low-vision presets, reduced motion, dyslexia font, text scaling,
   skip links, keyboard focus) and the desktop manager has theme + large-text options.
@@ -108,6 +113,11 @@ Full guides are in [**`docs/wiki/`**](docs/wiki) (also published to the project
 [Command-line options](docs/wiki/Command-Line-Options.md) ·
 [Building from source](docs/wiki/Building-From-Source.md) ·
 [FAQ](docs/wiki/FAQ.md)
+
+**Contributors / maintainers / agents:** see [**`handoff.md`**](handoff.md) (project state, architecture,
+open items), [**`AGENTS.md`**](AGENTS.md) (build/test/run + conventions), and
+[**`docs/features/`**](docs/features/README.md) — a per-feature handoff index with one detailed document
+per feature. Third-party credits and dependency links are in [**`CREDITS.md`**](CREDITS.md).
 
 ### Downloads  <a href="https://github.com/cafepromenade/minecraft-world-downloader/releases/latest"><img align="right" src="https://img.shields.io/github/downloads/cafepromenade/minecraft-world-downloader/total.svg"></a>
 Windows desktop manager (installer): [WorldDownloaderManager-Setup.exe](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/WorldDownloaderManager-Setup.exe)
