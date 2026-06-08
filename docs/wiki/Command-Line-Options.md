@@ -37,12 +37,43 @@ java -jar world-downloader.jar --no-gui -s mc.example.com -o my_world -r 10
 | `--disable-mark-unsaved` | | off | Stop marking unsaved chunks in red. |
 | `--draw-extended-chunks` | | off | Draw re-sent (extended) chunks on the map. |
 | `--enable-cave-mode` | | off | Auto-switch to cave render mode when underground. |
+| `--render-map` | | off* | Render the overview map to PNG tiles under `<output>/overview` (for the web console live map). *Auto-on in `--no-gui` mode.* |
+| `--disable-map-render` | | off | Don't render the overview map to disk, even when headless. |
+| `--modded-block-colors` | | on | Colour modded (non-`minecraft:`) blocks on the map from their mod-JAR textures. |
+| `--disable-modded-block-colors` | | off | Turn off modded-block map colouring. |
+
+## Auto-open containers
+Automatically open nearby containers (one at a time, rate-limited) to record their contents as you move. **Experimental — may trip server anti-cheat.**
+
+| Flag | Default | Description |
+| ---- | ------- | ----------- |
+| `--auto-open-containers` | off | Enable the auto-open sweep. |
+| `--auto-open-reach` | `4.0` | Max distance (blocks) to a container; keep at/below survival reach. |
+| `--auto-open-delay` | `400` | Minimum milliseconds between opens. Higher = safer. |
+| `--auto-open-gamemodes` | `all` | Gamemodes the sweep runs in: `all`, or a comma list of `survival,creative,adventure,spectator`. |
+| `--auto-open-allow-chest-near-players` | off | By default chests/trapped chests/barrels/shulkers are **not** opened while another player is within the radius below; pass this to open them anyway. |
+| `--auto-open-player-radius` | `100` | Radius (blocks) for the "another player nearby" check. |
+| `--auto-open-log` | — | File for a human-readable list of captured items (blank = `auto-open-items.log` beside the world). |
+| `--auto-open-state` | — | File recording which containers were already opened (blank = `auto-open-attempted.txt` beside the world). |
+| `--container-message-format` | `{type} ({count}) - {x} {y} {z}` | Template for the saved-container action-bar message. Placeholders: `{type} {count} {x} {y} {z}`. |
+
+## Chat auto-reply
+When an incoming chat message's trigger-coloured text matches, send that message's reply-coloured text back to the server as **real** chat. **Experimental.**
+
+| Flag | Default | Description |
+| ---- | ------- | ----------- |
+| `--auto-reply` | off | Enable chat auto-reply. |
+| `--auto-reply-trigger` | — | Exact text that triggers a reply (required). |
+| `--auto-reply-trigger-color` | `yellow` | Colour of the text that must match the trigger. |
+| `--auto-reply-color` | `red` | Colour of the text sent back as the reply. |
+| `--auto-reply-delay` | `1500` | Minimum milliseconds between replies (anti-spam). |
 
 ## Interface & misc
 | Flag | Alias | Description |
 | ---- | ----- | ----------- |
 | `--no-gui` | | Run headless (no GUI). Requires `--server`. |
 | `--force-console` | | Never redirect console output to the GUI. |
+| `--enable-voice-proxy` | | Proxy Simple Voice Chat / PlasmoVoice UDP through the downloader. |
 | `--disable-messages` | | Disable various info messages (e.g. chest saving). |
 | `--dev-mode` | | Enable developer mode. |
 | `--clear-settings` | | Delete the saved `config.json` and exit. |
