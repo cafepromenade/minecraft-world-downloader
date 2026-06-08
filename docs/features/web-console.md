@@ -35,7 +35,7 @@ The heart of the console is the `OPTIONS` list, a hand-maintained table that mir
 
 A single module-level `downloader = Downloader()` instance manages the Java process under a lock.
 
-- `build_command(cfg, creds)` assembles the argv: `java -Djava.awt.headless=true -jar JAR_PATH --no-gui`, then `--server <server>` (raising `ValueError` if blank). It then iterates `OPTIONS` (skipping `server`, `centerX`, `centerZ`): bool flags are appended when truthy, value flags are appended as `[flag, value]` when non-empty. `centerX`/`centerZ` are special-cased — both are only added (`--center-x`, `--center-z`) when *both* are present. If `creds` are supplied, `--username` and `--token` are appended.
+- `build_command(cfg, creds)` assembles the argv: `java -Djava.awt.headless=true -jar JAR_PATH --no-gui`, then `--server <server>` (raising `ValueError` if blank). It then iterates `OPTIONS` (skipping `server`, `centerX`, `centerZ`, and `portLocal`): bool flags are appended when truthy, value flags are appended as `[flag, value]` when non-empty. `centerX`/`centerZ` are special-cased — both are only added (`--center-x`, `--center-z`) when *both* are present. **`--local-port` is then forced to the fixed `CONTAINER_PROXY_PORT` (25565)** — the port the Docker image EXPOSEs and that `docker run -p <hostPort>:25565` / compose publish — so the editable "Proxy port (host)" field can never move the listener off the published port (which would make the Minecraft client unable to connect at all). If `creds` are supplied, `--username` and `--token` are appended.
 - `start()` clears the log, records a redacted command line (the Minecraft token replaced with `***`), spawns the process via `subprocess.Popen` with `cwd=DATA_DIR`, stdout+stderr merged into a pipe, then starts a daemon reader thread.
 - `_reader()` reads lines into a bounded `deque(maxlen=5000)` and, on process exit, appends an `=== downloader process exited (code N) ===` marker.
 - `logs_since(since)` returns `(total, new_lines)` so the browser can long-poll incrementally with a monotonically increasing `total` cursor.
@@ -112,7 +112,7 @@ Typical flow (matching `docker-compose.yml`):
 2. (Optional) To protect the console, set `WEB_USERNAME` + `WEB_PASSWORD` (and ideally `SECRET_KEY`) in the compose environment before starting; then sign in at `/login`.
 3. Open the dashboard. Under **Minecraft account**, sign in with Microsoft (open the shown `microsoft.com/link`, enter the code), paste an access token, or enter an offline username — required for online-mode servers.
 4. Fill in **Configuration** (at minimum the server address), then press **Save** (persist only) or **Start** (save + launch the downloader).
-5. Point your Minecraft client at `this-host:<local proxy port>` (default 25565) and play; chunks download as you explore.
+5. Point your Minecraft client at `this-host:<published proxy port>` (default 25565) and play; chunks download as you explore. The proxy always listens on 25565 inside the container; the "Proxy port (host)" field is just the host-side mapped port shown in the connect hint.
 6. Watch live status and logs in the page; optionally open **Map** for the live overview, or start an **Auto-explore bot** to fill the area automatically.
 7. Use **Stop**/**Restart** as needed. When done, download the world as `.zip`/`.tar.gz`, or use **Export directory** to drop a snapshot into `./data/exports`; the live world is also directly at `./data/<worldOutputDir>` on the host.
 
@@ -132,7 +132,8 @@ Typical flow (matching `docker-compose.yml`):
 - **The `OPTIONS` table is hand-maintained** to mirror `config/Config.java`. If a new CLI flag is added to the Java side, it will not appear in the console until this list is updated — there is no automatic sync.
 - **`markOldChunks` defaults true and `disableMarkUnsavedChunks` exist as options**, but several map defaults are "on by default" in the downloader; the console only emits flags it generates from the form, so toggling some on/off depends on the underlying jar's flag semantics.
 - **Microsoft token refresh happens lazily at launch** (only when older than 20h and a refresh token exists). A stale token without a refresh token will fail at start time and surface as an "Account error" 409.
-- **The auto-explore bot is only available if `scrape.js` exists in the image** (`start()` returns "Bot is not available in this image" otherwise). It connects to `127.0.0.1:<proxy_port>`, so the downloader must be running first.
+- **The container-internal proxy port is fixed at 25565** (`CONTAINER_PROXY_PORT`). The "Proxy port (host)" field is display-only — it does not move the listener (which must stay on the port Docker publishes). To change the host-side port, change the `-p <hostPort>:25565` mapping in the desktop manager / compose, not this field.
+- **The auto-explore bot is only available if `scrape.js` exists in the image** (`start()` returns "Bot is not available in this image" otherwise). It connects to `127.0.0.1:25565` (the fixed internal proxy port), so the downloader must be running first.
 - **Pending Microsoft device-code flows are stored in-memory** (`auth._flows`); a console restart cancels any in-progress sign-in.
 - **Path safety** for world download/export and map tiles is enforced via `normpath` + prefix checks; this assumes `DATA_DIR` itself is trusted.
 

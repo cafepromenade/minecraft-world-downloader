@@ -41,6 +41,14 @@ import auth
 JAR_PATH = os.environ.get("JAR_PATH", "/app/world-downloader.jar")
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
 WEB_PORT = int(os.environ.get("WEB_PORT", "8080"))
+
+# The proxy ALWAYS listens on this fixed port INSIDE the container. It is the port the Docker image
+# EXPOSEs and the port that `docker run -p <hostPort>:25565` / docker-compose publish. It must never
+# change at runtime: if the proxy bound a different port, the published host port would forward to a
+# port nothing is listening on and the Minecraft client could not connect at all. The "Proxy port
+# (host)" field in the UI is only the *host-side* published port shown in the connect hint — it does
+# not (and must not) change this container-internal listen port.
+CONTAINER_PROXY_PORT = 25565
 USERNAME = os.environ.get("WEB_USERNAME", "admin")
 # The console itself has no login by default. Set WEB_PASSWORD to put the dashboard behind a
 # username/password gate (useful if you expose it beyond localhost). The Minecraft account login
@@ -81,8 +89,10 @@ OPTIONS = [
     # group, key, flag, type, default, label, help
     ("Connection", "server", "--server", "text", "", "Server address",
      "Remote server hostname or IP (without port). Required."),
-    ("Connection", "portLocal", "--local-port", "int", "25565", "Local proxy port",
-     "Port the downloader's proxy listens on. Connect Minecraft here (default 25565, mapped in compose)."),
+    ("Connection", "portLocal", "--local-port", "int", "25565", "Proxy port (host)",
+     "Host port your Minecraft client connects to (localhost:<this>). For display only — it must match "
+     "the port you mapped to the container's 25565 in the desktop manager / docker-compose. The proxy "
+     "always listens on 25565 inside the container, so changing this here never moves the listener."),
     ("Connection", "disableSrvLookup", "--disable-srv-lookup", "bool", False, "Disable SRV lookup",
      "Disable checking the true address using DNS SRV records."),
 
@@ -281,6 +291,9 @@ class Downloader:
                 continue
             if key in ("centerX", "centerZ"):
                 continue
+            if key == "portLocal":
+                # never let the UI move the listen port off the published container port (see below)
+                continue
             raw = cfg.get(key)
             if typ == "bool":
                 if (str(raw).lower() in BOOL_TRUE) or raw is True:
@@ -289,6 +302,11 @@ class Downloader:
                 val = "" if raw is None else str(raw).strip()
                 if val != "":
                     cmd += [flag, val]
+
+        # The proxy must listen on the fixed port Docker publishes (CONTAINER_PROXY_PORT), not the
+        # editable host-port hint — otherwise the published port maps to a dead port and the Minecraft
+        # client can't connect at all.
+        cmd += ["--local-port", str(CONTAINER_PROXY_PORT)]
 
         if include_center:
             cmd += ["--center-x", cx, "--center-z", cz]
@@ -871,12 +889,9 @@ def map_tile(dim, mode, rx, rz):
 @app.route("/api/bot/start", methods=["POST"])
 @login_required
 def api_bot_start():
-    cfg = load_config()
-    try:
-        proxy_port = int(cfg.get("portLocal") or "25565")
-    except ValueError:
-        proxy_port = 25565
-    ok, msg = bot_manager.start(request.form, proxy_port)
+    # The bot runs inside the container and connects to the proxy on its fixed internal port — the
+    # same port the downloader listens on (CONTAINER_PROXY_PORT), not the host-side display hint.
+    ok, msg = bot_manager.start(request.form, CONTAINER_PROXY_PORT)
     return jsonify({"ok": ok, "message": msg, "status": bot_manager.status()}), (200 if ok else 409)
 
 

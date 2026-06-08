@@ -52,7 +52,7 @@ Installs to `$PROGRAMFILES64\World Downloader Manager`, requires admin (`Request
 
 ### Version branching / notable splits
 
-- Two different "release" pipelines coexist: `release.yml` fires on every push to `main`; `docker-image.yml` fires on push to `master`. (The repo's default branch is `master` per git config; `release.yml` keys off `main`.)
+- Two "release" pipelines coexist: `release.yml` fires on every push to `main`; `docker-image.yml` fires on push to `main` or `master`. The fork's GitHub default branch is `main`, so `latest` (tagged with `enable={{is_default_branch}}`) is published when building from `main` — keeping the GHCR image current with the code the all-in-one release also builds.
 - JAR releases come from two paths: tag-driven `maven-publish.yml` (tests run) and per-push `release.yml` (tests skipped, version `1.0.<run_number>`).
 
 ## Key files
@@ -92,7 +92,7 @@ No application CLI flags are introduced by this feature; it only builds/packages
 - **Pull the prebuilt image:** `docker run ... ghcr.io/<owner>/<repo>:latest` (image is published by `docker-image.yml`).
 - **Run the jar directly:** download `world-downloader.jar` from a release and run `java -jar world-downloader.jar`.
 - **Install the desktop manager (Windows):** download `WorldDownloaderManager-Setup.exe` from a release and run it; installs to Program Files with Start-menu/desktop shortcuts and an uninstaller. The all-in-one installer also drops the jar, `docker-compose.yml`, and full `source.zip` under the install dir's `resources/` folder.
-- **Cut releases:** push to `main` for an automatic all-in-one release; push a `v*` tag for the JAR release (`maven-publish.yml`) and the desktop installer release (`desktop-release.yml`); push to `master` (or matching paths) to refresh the GHCR image.
+- **Cut releases:** push to `main` for an automatic all-in-one release **and** a refreshed GHCR `latest` image; push a `v*` tag for the JAR release (`maven-publish.yml`) and the desktop installer release (`desktop-release.yml`).
 
 ## Verification
 
@@ -102,7 +102,7 @@ No application CLI flags are introduced by this feature; it only builds/packages
 
 ## Gotchas & limitations
 
-- **Branch mismatch:** `release.yml` triggers on `main`, while `docker-image.yml` triggers on `master` (the repo default). Pushing to only one branch will not exercise both pipelines.
+- **GHCR `latest` follows the default branch:** `docker-image.yml` now triggers on `main` (and `master`), and `latest` is tagged via `enable={{is_default_branch}}`. Since the fork's default branch is `main`, pushing there refreshes both the all-in-one release and the GHCR image. (Previously the workflow only triggered on `master`, so the image went stale relative to `main` — fixed.) The desktop manager also `docker pull`s before each launch, so it never runs a stale cached image.
 - **`build.yml` always reports success:** the summary step hard-codes "BUILD SUCCESSFUL" and the `test` job swallows failures (`continue-on-error`), so a green check does not guarantee passing tests.
 - **NSIS default `SRC_DIR` path is fragile:** it points at `net8.0-windows10.0.19041.0\win-x64\publish`, but the csproj's `TargetFramework` is `net8.0-windows` (no platform-version suffix). CI always overrides `SRC_DIR` to the `dotnet publish` output, so the default path is only a fallback and may not match a local publish.
 - **Desktop installer is x64-only / Windows-only:** the csproj lists `win-x64;win-arm64`, but both workflows publish and package only `-r win-x64`; the installer forces `$PROGRAMFILES64` and `RequestExecutionLevel admin`.

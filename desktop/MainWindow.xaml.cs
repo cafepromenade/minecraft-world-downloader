@@ -141,6 +141,11 @@ public partial class MainWindow : Window
         {
             Directory.CreateDirectory(_settings.DataFolder);
             await _docker.RemoveAsync(_settings.ContainerName);
+            // Always pull the freshest published image before launching, so the web console / app is
+            // never stale. Non-fatal: if the pull fails (offline, or a local-only image) we fall back
+            // to whatever image is already cached and still try to run.
+            SetStatus("info", "Updating image (docker pull) — first run can take a while …");
+            await _docker.PullAsync(_settings.Image);
             var (code, _) = await _docker.RunContainerAsync(_settings);
             if (code == 0)
             {
