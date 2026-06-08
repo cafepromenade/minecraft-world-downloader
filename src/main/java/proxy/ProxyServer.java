@@ -92,8 +92,12 @@ public class ProxyServer extends Thread {
                         System.out.println("[disconnect] client closed the connection. Waiting for new connection...");
                     } catch (Throwable ex) {
                         // this thread reads FROM the client, so an error here is the CLIENT side dropping
-                        System.out.println("[disconnect] client connection error: " + ex + " - waiting for new connection...");
-                        ex.printStackTrace();
+                        if (isBenignClose(ex)) {
+                            System.out.println("[disconnect] client closed the connection (" + ex.getMessage() + "). Waiting for new connection...");
+                        } else {
+                            System.out.println("[disconnect] client connection error: " + ex + " - waiting for new connection...");
+                            ex.printStackTrace();
+                        }
                         connectionManager.reset();
                     }
                     // the client closed the connection to us, so close our connection to the server.
@@ -112,8 +116,12 @@ public class ProxyServer extends Thread {
                     System.out.println("[disconnect] server closed the connection. Waiting for new connection...");
                 } catch (Throwable ex) {
                     // this thread reads FROM the server, so an error here is the SERVER side dropping
-                    System.out.println("[disconnect] server connection error: " + ex + " - waiting for new connection...");
-                    ex.printStackTrace();
+                    if (isBenignClose(ex)) {
+                        System.out.println("[disconnect] server closed the connection (" + ex.getMessage() + "). Waiting for new connection...");
+                    } else {
+                        System.out.println("[disconnect] server connection error: " + ex + " - waiting for new connection...");
+                        ex.printStackTrace();
+                    }
                     connectionManager.reset();
                 }
 
@@ -126,5 +134,23 @@ public class ProxyServer extends Thread {
                 if (client.get() != null) { attempt(client.get()::close); }
             }
         }
+    }
+
+    /**
+     * Whether a read error is just a normal/abrupt socket close rather than a real fault. On Windows
+     * especially, a peer closing the socket (incl. the routine server-list ping) surfaces as a
+     * SocketException "Connection reset" instead of a clean EOF — that's not an error worth a stack trace.
+     */
+    private static boolean isBenignClose(Throwable ex) {
+        String m = ex == null ? null : ex.getMessage();
+        if (m == null) { return false; }
+        m = m.toLowerCase();
+        return m.contains("connection reset")
+            || m.contains("socket closed")
+            || m.contains("socket is closed")
+            || m.contains("broken pipe")
+            || m.contains("connection abort")
+            || m.contains("an existing connection was forcibly closed")
+            || m.contains("connection was aborted");
     }
 }
