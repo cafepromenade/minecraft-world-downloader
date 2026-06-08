@@ -115,12 +115,18 @@ public class EncryptionManager {
     }
 
     /**
-     * Simple method to make exception handling cleaner.
+     * Run an auth/encryption step; on failure log a clear reason and drop the connection. This is the
+     * usual cause of an "instantly disconnected" join against an ONLINE-mode server: the proxy must
+     * authenticate your Minecraft session with the server, and if you are not signed in (or the auth
+     * call fails) the connection is closed here.
      */
-    private boolean disconnectOnError(IExceptionHandler r) {
+    private boolean disconnectOnError(String what, IExceptionHandler r) {
         try {
             r.run();
         } catch (Exception ex) {
+            System.out.println("[disconnect] " + what + " failed: " + ex
+                    + " — online-mode servers require you to be signed in to a valid Minecraft account "
+                    + "(see Authentication / sign in via the web console or --token). Closing the connection.");
             ex.printStackTrace();
 
             attempt(() -> streamToServer.close());
@@ -251,14 +257,14 @@ public class EncryptionManager {
 
     private void sendReplacementEncryptionConfirmationWithProfileKey() {
         // authenticate the client so that the remote server will accept us
-        boolean client = disconnectOnError(() -> clientAuthenticator.makeRequest(generateServerHash()));
+        boolean client = disconnectOnError("authenticating your account with the server", () -> clientAuthenticator.makeRequest(generateServerHash()));
         if (!client) { return; }
 
         // get keys
         attempt(() -> clientAuthenticator.getClientProfileKeyPair(this));
 
         // verify the connecting client connection is who they claim to be
-        boolean server = disconnectOnError(() -> new ServerAuthenticator(username).makeRequest(generateServerHash()));
+        boolean server = disconnectOnError("verifying the connecting client", () -> new ServerAuthenticator(username).makeRequest(generateServerHash()));
         if (!server) { return; }
 
         // encryption confirmation
@@ -309,11 +315,11 @@ public class EncryptionManager {
     private void sendReplacementEncryptionConfirmation() {
         if (shouldAuthenticate) {
             // authenticate the client so that the remote server will accept us
-            boolean client = disconnectOnError(() -> clientAuthenticator.makeRequest(generateServerHash()));
+            boolean client = disconnectOnError("authenticating your account with the server", () -> clientAuthenticator.makeRequest(generateServerHash()));
             if (!client) { return; }
 
             // verify the connecting client connection is who they claim to be
-            boolean server = disconnectOnError(() -> new ServerAuthenticator(username).makeRequest(generateServerHash()));
+            boolean server = disconnectOnError("verifying the connecting client", () -> new ServerAuthenticator(username).makeRequest(generateServerHash()));
             if (!server) { return; }
         }
 
