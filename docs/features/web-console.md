@@ -62,7 +62,9 @@ The `login_required` decorator gates views only when `LOGIN_ENABLED` is true (i.
 
 ### Auto-explore bot (`BotManager`)
 
-A second module-level instance `bot_manager` runs `node scrape.js` from `SCRAPER_DIR` (`/app/scraper`). `start(form, proxy_port)` builds a `bot-config.json` in `DATA_DIR` from the form (auth offline/microsoft, username, bot count, radius, center-on-spawn, prefer-fly, revisit, optional AuthMe login password, a visited-file path), pointing the bot at `127.0.0.1:<proxy_port>`. The reader thread watches for `MSA_CODE <json>` lines (surfacing the bot's Microsoft device code in `status().msa`) and clears it once a bot reports `spawned at`. Microsoft bot logins force `count = 1`.
+A second module-level instance `bot_manager` runs `node scrape.js` from `SCRAPER_DIR` (`/app/scraper`). `start(form, proxy_port, auth_only=False)` builds a `bot-config.json` in `DATA_DIR` from the form (auth offline/microsoft, username, bot count, radius, center-on-spawn, prefer-fly, revisit, optional AuthMe login password, a visited-file path), pointing the bot at `127.0.0.1:<proxy_port>` (the fixed `CONTAINER_PROXY_PORT`). The reader thread watches for `MSA_CODE <json>` lines (surfacing the bot's Microsoft device code in `status().msa`) and clears it once a bot reports `spawned at` or `sign-in complete`. Microsoft bot logins force `count = 1`, and the token is cached under the mounted volume (`/data/bot-auth`, set via each account's `cacheDir`) so sign-in survives container restarts.
+
+A dedicated **`/api/bot/auth`** route runs `start(..., auth_only=True)`: the scraper does only the Microsoft device-code flow (no connecting/exploring), caching a token the explore bot then reuses silently. The device code is surfaced (and auto-copied) in the UI exactly like the explore path. This backs the bot panel's **"Sign in to Microsoft"** button.
 
 ### World export
 
@@ -70,7 +72,7 @@ A second module-level instance `bot_manager` runs `node scrape.js` from `SCRAPER
 
 ### Front-end (dashboard.html)
 
-The dashboard is a single page with inline JS. It polls `api/status` + `api/logs` every 1.5s, `api/world-info` every 5s, and `api/bot/status` + `api/bot/logs` every 2s (bot logs prefixed `[bot]` in the shared log pane). It disables config inputs while the downloader is running, drives the Microsoft device-code flow with a 4s polling loop, and shows the export section only once a world exists.
+The dashboard is a single page with inline JS. The configuration form is grouped into **collapsible `<details>` accordion sections** (only the first is open) whose fields lay out in a responsive grid, so the long option list isn't one big scroll; the primary Start/Stop/Restart/Save bar is **sticky** to the viewport bottom while the form is in view. Inputs (including the bot panel's account `<select>`, username, radius, etc.) all use the same Material-style outlined floating-label fields. It polls `api/status` + `api/logs` every 1.5s, `api/world-info` every 5s, and `api/bot/status` + `api/bot/logs` every 2s (bot logs prefixed `[bot]` in the shared log pane). It disables config inputs while the downloader is running, drives the Microsoft device-code flow with a 4s polling loop, **auto-copies the bot's device code** when it appears, and shows the export section only once a world exists.
 
 ### Health check
 

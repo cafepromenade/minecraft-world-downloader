@@ -1,5 +1,6 @@
 package proxy;
 
+import config.Config;
 import game.NetworkMode;
 import packets.DataReader;
 
@@ -45,6 +46,21 @@ public class ProxyServer extends Thread {
         String friendlyHost = connectionDetails.getFriendlyHost();
         System.out.println("Starting proxy for " + friendlyHost + ". Make sure to connect to localhost:" + connectionDetails.getPortLocal() + " instead of the regular server address.");
 
+        // Developer mode: emit a diagnostics banner so toggling --dev-mode has a visible, useful effect
+        // (it shows up directly in the web console's log pane). It also turns on per-connection logging
+        // in the accept loop below.
+        if (Config.isInDevMode()) {
+            System.out.println("[dev] ===== developer mode enabled =====");
+            System.out.println("[dev] " + System.getProperty("java.runtime.name", "java") + " " + System.getProperty("java.version")
+                    + " on " + System.getProperty("os.name") + " " + System.getProperty("os.arch"));
+            System.out.println("[dev] proxy: localhost:" + connectionDetails.getPortLocal() + "  ->  " + friendlyHost);
+            System.out.println("[dev] world output dir: " + Config.getWorldOutputDir());
+            System.out.println("[dev] features: extended-render-distance=" + Config.getExtendedRenderDistance()
+                    + ", auto-open-containers=" + Config.autoOpenContainers()
+                    + ", overview-map-render=" + Config.renderOverviewMap());
+            System.out.println("[dev] verbose connection logging is ON - each client connection will be logged below.");
+        }
+
         // Create a ServerSocket to listen for connections with
         AtomicReference<ServerSocket> ss = new AtomicReference<>();
         attempt(() -> ss.set(connectionDetails.getServerSocket()), (ex) -> {
@@ -65,6 +81,9 @@ public class ProxyServer extends Thread {
             try {
                 // Wait for a connection on the local port
                 client.set(ss.get().accept());
+                if (Config.isInDevMode()) {
+                    System.out.println("[dev] client connected from " + client.get().getRemoteSocketAddress());
+                }
 
                 final InputStream streamFromClient = client.get().getInputStream();
                 final OutputStream streamToClient = client.get().getOutputStream();

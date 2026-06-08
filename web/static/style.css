@@ -166,6 +166,54 @@ legend { padding: 0 10px; color: var(--primary); font-weight: 700; font-size: 12
 .text-field input:disabled { opacity: .5; }
 .help { display: block; color: var(--muted); font-size: 11px; margin: 4px 2px 0; line-height: 1.4; }
 
+/* Outlined select that matches the text fields (custom chevron, floating label always raised) */
+.text-field select {
+    width: 100%; padding: 14px 34px 10px 12px; border-radius: 10px;
+    border: 1.5px solid var(--outline); background: var(--bg); color: var(--text);
+    font-size: 14px; font-family: inherit; cursor: pointer;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2393a1b5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 10px center;
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.text-field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(61,220,132,.14); }
+.text-field select:disabled { opacity: .5; }
+/* A <select> always has a value, so its floating label stays raised */
+.text-field.select label {
+    position: absolute; top: -8px; left: 8px; font-size: 11px; color: var(--primary); font-weight: 600;
+    background: linear-gradient(var(--bg), var(--bg)); padding: 0 5px; pointer-events: none;
+}
+
+/* Collapsible configuration groups — keep the long form short; native validation auto-opens a group
+   containing an invalid field, and collapsed groups still submit their values. */
+details.group {
+    border: 1px solid var(--outline); border-radius: 14px; margin: 0 0 12px;
+    background: rgba(127,160,200,.03); overflow: hidden;
+}
+details.group > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+    padding: 13px 16px; color: var(--primary); font-weight: 700; font-size: 12px;
+    letter-spacing: .6px; text-transform: uppercase; user-select: none;
+}
+details.group > summary::-webkit-details-marker { display: none; }
+details.group > summary::before {
+    content: "chevron_right"; font-family: 'Material Symbols Rounded'; font-weight: normal;
+    text-transform: none; font-size: 20px; color: var(--muted);
+    transition: transform .2s var(--ease);
+}
+details.group[open] > summary::before { transform: rotate(90deg); }
+details.group > summary:hover { color: var(--text); }
+details.group > summary:hover::before { color: var(--primary); }
+.group-meta { margin-left: auto; color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: .2px; text-transform: none; }
+/* lay fields out in responsive columns so each group is shorter vertically */
+.group-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 20px; padding: 6px 16px 8px; }
+.group-body > .field { flex: 1 1 220px; min-width: 0; }
+.group-body > .field-bool { flex-basis: 100%; }
+
+/* bot settings reuse the same modern fields in a responsive grid */
+.bot-grid { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 16px; }
+.bot-grid > .text-field { flex: 1 1 180px; min-width: 0; }
+
 /* Material switch */
 .switch-label { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 4px 0; }
 .switch-label.small { font-size: 12px; }
@@ -183,6 +231,15 @@ legend { padding: 0 10px; color: var(--primary); font-weight: 700; font-size: 12
 .switch-label input:focus-visible + .switch { box-shadow: 0 0 0 4px rgba(61,220,132,.18); }
 
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+
+/* Primary Start/Stop/Restart/Save bar stays pinned to the bottom of the viewport while the (now much
+   shorter, accordion-based) config form is in view, so the controls are always reachable. */
+.main-actions {
+    position: sticky; bottom: 0; z-index: 6; align-items: center;
+    margin: 14px -22px 0; padding: 13px 22px;
+    background: linear-gradient(0deg, var(--surface) 65%, transparent);
+    border-top: 1px solid var(--outline);
+}
 
 /* ============================== Buttons (ripple) ============================== */
 .btn {

@@ -70,7 +70,7 @@ All flags are defined in `Config.java` (args4j `@Option`):
 
 - `--auto-open-containers` (default off) — master switch; enables the experimental sweep.
 - `--auto-open-delay` (ms, default 400; floored to 50) — minimum gap between auto-opened containers. Higher is safer against anti-cheat.
-- `--auto-open-reach` (blocks, default 4.0) — max distance to a container to auto-open; keep at/below survival reach.
+- `--auto-open-reach` — **deprecated/ignored.** Reach is now fixed at the survival reach (4.0 blocks; `Config.AUTO_OPEN_REACH`) and cannot be changed, since a larger reach exceeds a legitimate player's and trips server anti-cheat / desyncs which contents the server sends. The flag is still accepted (it just does nothing) so older command lines don't error, and it is no longer shown in the web console.
 - `--auto-open-state` (default `auto-open-attempted.txt` beside the world folder) — file recording which block positions were already opened, so a block is never re-opened (even across restarts). Set an absolute path to relocate.
 - `--auto-open-log` (default `auto-open-items.log` beside the world folder) — file the human-readable captured-items list is appended to. Set an absolute path to relocate.
 - `--auto-open-allow-chest-near-players` (default off, i.e. skipping is on) — by default chests/trapped chests/barrels/shulker boxes are NOT opened while another player is within `--auto-open-player-radius`; pass this to open them anyway. Affects only those container types; all others always auto-open.

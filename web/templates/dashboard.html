@@ -72,8 +72,12 @@
 
         <form id="configForm">
             {% for group, opts in groups.items() %}
-            <fieldset class="reveal" style="animation-delay: {{ loop.index0 * 0.05 }}s">
-                <legend>{{ group }}</legend>
+            <details class="group reveal" style="animation-delay: {{ loop.index0 * 0.05 }}s" {% if loop.first %}open{% endif %}>
+                <summary>
+                    <span class="group-title">{{ group }}</span>
+                    <span class="group-meta">{{ opts|length }} setting{{ '' if opts|length == 1 else 's' }}</span>
+                </summary>
+                <div class="group-body">
                 {% for o in opts %}
                 {% if o.type == 'bool' %}
                 <div class="field field-bool">
@@ -96,10 +100,11 @@
                 </div>
                 {% endif %}
                 {% endfor %}
-            </fieldset>
+                </div>
+            </details>
             {% endfor %}
 
-            <div class="actions">
+            <div class="actions main-actions">
                 <button type="button" id="startBtn" class="btn primary"><span class="material-symbols-rounded">play_arrow</span> Start</button>
                 <button type="button" id="stopBtn" class="btn danger" disabled><span class="material-symbols-rounded">stop</span> Stop</button>
                 <button type="button" id="restartBtn" class="btn"><span class="material-symbols-rounded">restart_alt</span> Restart</button>
@@ -126,17 +131,34 @@
         <h2><span class="material-symbols-rounded">smart_toy</span> Auto-explore bot</h2>
         <p class="hint">Mineflayer bot(s) that connect through the proxy and walk/fly a grid so the whole
             area downloads automatically. Start the downloader (and sign in) first.</p>
-        <div class="config-grid">
-            <label class="field">Account
+        <div class="bot-grid">
+            <div class="text-field select">
                 <select id="botAuth">
                     <option value="offline" selected>Offline</option>
                     <option value="microsoft">Microsoft</option>
                 </select>
-            </label>
-            <label class="field">Username / MS email <input type="text" id="botUser" value="Scraper"></label>
-            <label class="field">Radius (blocks) <input type="number" id="botRadius" value="256"></label>
-            <label class="field">Bots <input type="number" id="botCount" value="1" min="1"></label>
-            <label class="field">Login password (AuthMe) <input type="text" id="botLoginPassword" placeholder="optional"></label>
+                <label for="botAuth">Account</label>
+            </div>
+            <div class="text-field">
+                <input type="text" id="botUser" value="Scraper" placeholder=" ">
+                <label for="botUser">Username / MS email</label>
+            </div>
+            <div class="text-field">
+                <input type="number" id="botRadius" value="256" placeholder=" ">
+                <label for="botRadius">Radius (blocks)</label>
+            </div>
+            <div class="text-field">
+                <input type="number" id="botCount" value="1" min="1" placeholder=" ">
+                <label for="botCount">Bots</label>
+            </div>
+            <div class="text-field">
+                <input type="text" id="botLoginPassword" placeholder=" ">
+                <label for="botLoginPassword">Login password (AuthMe)</label>
+            </div>
+        </div>
+        <div class="actions" style="margin-top:4px">
+            <button type="button" id="botAuthBtn" class="btn small"><span class="material-symbols-rounded">window</span> Sign in to Microsoft</button>
+            <span class="muted">Caches the bot's Microsoft token (once) so it connects silently. The device code appears below and is copied automatically.</span>
         </div>
         <div class="actions" style="margin-top:8px">
             <label class="switch-label small"><input type="checkbox" id="botCenterOnSpawn" checked><span class="switch"></span><span>Center on spawn</span></label>
@@ -172,7 +194,7 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-let logSince = 0, running = false, msTimer = null;
+let logSince = 0, running = false, msTimer = null, lastBotMsaCode = null;
 
 const fmtUptime = (s) => !s ? "" : (s>=3600?Math.floor(s/3600)+"h ":"")+(s%3600>=60?Math.floor((s%3600)/60)+"m ":"")+(s%60)+"s";
 const fmtBytes = (b) => { if(!b) return "0 B"; const u=["B","KB","MB","GB"]; let i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(i?1:0)+" "+u[i]; };
@@ -196,7 +218,7 @@ function applyStatus(st) {
     $("uptime").textContent = running ? fmtUptime(st.uptime) : "";
     $("startBtn").disabled = running;
     $("stopBtn").disabled = !running;
-    document.querySelectorAll("#configForm fieldset:not(.export) input").forEach(el => el.disabled = running);
+    document.querySelectorAll("#configForm .group input").forEach(el => el.disabled = running);
 }
 
 function showMsg(box, text, ok) {
@@ -349,8 +371,18 @@ function applyBot(st) {
         link.href = st.msa.url || "https://www.microsoft.com/link";
         link.textContent = (st.msa.url || "microsoft.com/link").replace(/^https?:\/\//, "");
         box.style.display = "block";
+        // Auto-copy the device code the first time we see it (best-effort; the manual Copy button stays).
+        if (lastBotMsaCode !== st.msa.code) {
+            lastBotMsaCode = st.msa.code;
+            navigator.clipboard.writeText(st.msa.code).then(() => {
+                $("botMsaHint").textContent = "Code copied to clipboard — open the link and paste it.";
+            }).catch(() => {
+                $("botMsaHint").textContent = "Open the link and enter the code above (tap “Copy code” to copy).";
+            });
+        }
     } else {
         box.style.display = "none";
+        lastBotMsaCode = null;
     }
 }
 $("botMsaCopy").onclick = () => {
@@ -360,6 +392,14 @@ $("botMsaCopy").onclick = () => {
 $("botStartBtn").onclick = async () => {
     try { const j = await (await fetch("api/bot/start", { method: "POST", body: botData() })).json();
         showMsg("botMsg", j.message, j.ok); applyBot(j.status); }
+    catch (e) { showMsg("botMsg", "Error: " + e, false); }
+};
+$("botAuthBtn").onclick = async () => {
+    // Selecting Microsoft makes intent obvious, but the auth endpoint forces Microsoft regardless.
+    $("botAuth").value = "microsoft";
+    try { const j = await (await fetch("api/bot/auth", { method: "POST", body: botData() })).json();
+        showMsg("botMsg", j.ok ? "Microsoft sign-in started — a device code will appear below." : j.message, j.ok);
+        applyBot(j.status); }
     catch (e) { showMsg("botMsg", "Error: " + e, false); }
 };
 $("botStopBtn").onclick = async () => {

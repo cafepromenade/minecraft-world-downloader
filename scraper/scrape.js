@@ -410,10 +410,53 @@ async function walkTo(bot, pf, x, z, cfg) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Auth-only mode: run the Microsoft device-code flow and cache the token, WITHOUT connecting to a
+// server or exploring. Lets the web console offer a dedicated "Sign in to Microsoft" button for the
+// bot. The token is cached in the same profilesFolder (keyed by username) that the explore bot uses,
+// so subsequent real runs connect silently.
+// ---------------------------------------------------------------------------------------------
+async function authOnlyFlow(cfg) {
+  if (!prismarineAuth) {
+    console.error('[auth] prismarine-auth is not installed in this image; cannot sign in.');
+    process.exit(1);
+  }
+  const acct = (cfg.accounts && cfg.accounts.find((a) => a.auth === 'microsoft'))
+            || (cfg.accounts && cfg.accounts[0]) || { username: 'Player' };
+  const username = acct.username || 'Player';
+  const profilesFolder = acct.cacheDir || path.join(process.cwd(), '.minecraft-auth', String(username));
+  fs.mkdirSync(profilesFolder, { recursive: true });
+
+  const onMsaCode = (data) => {
+    const url = data.verification_uri || 'https://www.microsoft.com/link';
+    console.log('===== MICROSOFT SIGN-IN REQUIRED =====');
+    console.log(data.message || ('Open ' + url + ' and enter code ' + data.user_code));
+    // machine-readable marker the web console parses to surface (and auto-copy) the code
+    console.log('MSA_CODE ' + JSON.stringify({ bot: 1, code: data.user_code, url }));
+  };
+
+  // Mirror mineflayer/minecraft-protocol's defaults when authTitle is unset (NintendoSwitch + 'live'
+  // device-code flow) so the cached token matches what the explore bot expects and is reused silently.
+  const { Authflow, Titles } = prismarineAuth;
+  const opts = { authTitle: Titles.MinecraftNintendoSwitch, deviceType: 'Nintendo', flow: 'live' };
+  const flow = new Authflow(username, profilesFolder, opts, onMsaCode);
+  try {
+    await flow.getMinecraftJavaToken({ fetchProfile: true });
+    console.log('[auth] Microsoft sign-in complete — token cached for ' + username + '. The bot can now connect silently.');
+    process.exit(0);
+  } catch (e) {
+    console.error('[auth] sign-in failed: ' + (e && e.message ? e.message : e));
+    process.exit(1);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------------------------
 async function main() {
   const cfg = loadConfig();
+  if (cfg.authOnly || process.argv.includes('--auth-only')) {
+    return authOnlyFlow(cfg);
+  }
   const targets = cfg.centerOnSpawn ? [] : buildTargets(cfg);
   const visited = new VisitedStore(cfg.visitedFile, cfg.revisit);
   const accounts = cfg.accounts && cfg.accounts.length ? cfg.accounts : [{ auth: 'offline', username: 'Scraper' }];

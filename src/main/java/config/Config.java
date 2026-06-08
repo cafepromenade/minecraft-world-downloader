@@ -450,8 +450,13 @@ public class Config {
     public int autoOpenDelayMs = 400;
 
     @Option(name = "--auto-open-reach",
-            usage = "Max distance (blocks) to a container for auto-open; keep at/below survival reach (default 4.0).")
+            usage = "Deprecated/ignored: auto-open reach is now fixed at the survival reach (4.0 blocks) and "
+                    + "cannot be changed. Kept only so older command lines don't error.")
     public double autoOpenReach = 4.0;
+
+    /** Auto-open reach is intentionally fixed at survival reach so the sweep can't exceed a legitimate
+     *  player's reach (anything larger trips server anti-cheat / desyncs which contents the server sends). */
+    public static final double AUTO_OPEN_REACH = 4.0;
 
     @Option(name = "--auto-open-state",
             usage = "File that records which containers were already auto-opened, so a block is never "
@@ -632,7 +637,7 @@ public class Config {
 
     public static int autoOpenDelayMs() { return Math.max(50, instance.autoOpenDelayMs); }
 
-    public static double autoOpenReach() { return instance.autoOpenReach; }
+    public static double autoOpenReach() { return AUTO_OPEN_REACH; }
 
     public static String autoOpenStateFile() { return instance.autoOpenStateFile; }
 

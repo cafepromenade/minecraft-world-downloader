@@ -139,8 +139,6 @@ OPTIONS = [
     ("Auto-open containers", "autoOpenContainers", "--auto-open-containers", "bool", False, "Auto-open containers",
      "Automatically open nearby containers (one at a time, rate-limited) to record their contents as "
      "you move. EXPERIMENTAL — may trip server anti-cheat."),
-    ("Auto-open containers", "autoOpenReach", "--auto-open-reach", "text", "4.0", "Reach (blocks)",
-     "Max distance to a container to auto-open it; keep at/below survival reach (default 4.0)."),
     ("Auto-open containers", "autoOpenDelay", "--auto-open-delay", "int", "400", "Delay (ms)",
      "Minimum milliseconds between auto-opened containers (default 400). Higher = safer."),
     ("Auto-open containers", "autoOpenGamemodes", "--auto-open-gamemodes", "text", "all", "Gamemodes",
@@ -403,7 +401,7 @@ class BotManager:
                     except ValueError:
                         pass
                     continue
-                if "spawned at" in line:
+                if "spawned at" in line or "sign-in complete" in line:
                     self.msa = None
                 self._append(line)
         finally:
@@ -419,24 +417,32 @@ class BotManager:
                 "pid": self.proc.pid if self.is_running() else None,
                 "msa": self.msa}
 
-    def start(self, form, proxy_port):
+    def start(self, form, proxy_port, auth_only=False):
         with self.lock:
             if self.is_running():
-                return False, "Bot is already running."
+                return False, "Bot is already running." if not auth_only else "A bot/sign-in is already running."
             if not os.path.isfile(SCRAPER_JS):
                 return False, "Bot is not available in this image."
-            auth = "microsoft" if form.get("botAuth") == "microsoft" else "offline"
             user = (form.get("botUser") or "Scraper").strip() or "Scraper"
-            try:
-                count = max(1, int(form.get("botCount") or "1"))
-            except ValueError:
+            # Microsoft tokens cache here (under the mounted /data volume) so sign-in survives container
+            # restarts; the explore bot and the auth-only sign-in share this folder + username.
+            ms_cache = os.path.join(DATA_DIR, "bot-auth")
+            if auth_only:
+                # one Microsoft account, no exploring — just run the device-code flow and cache the token
                 count = 1
-            if auth == "microsoft":
-                # one Microsoft account = one bot (the username is the email; don't mangle it with an index)
-                count = 1
-                accounts = [{"auth": "microsoft", "username": user}]
+                accounts = [{"auth": "microsoft", "username": user, "cacheDir": ms_cache}]
             else:
-                accounts = [{"auth": "offline", "username": user + (str(i + 1) if count > 1 else "")} for i in range(count)]
+                auth = "microsoft" if form.get("botAuth") == "microsoft" else "offline"
+                try:
+                    count = max(1, int(form.get("botCount") or "1"))
+                except ValueError:
+                    count = 1
+                if auth == "microsoft":
+                    # one Microsoft account = one bot (the username is the email; don't mangle it with an index)
+                    count = 1
+                    accounts = [{"auth": "microsoft", "username": user, "cacheDir": ms_cache}]
+                else:
+                    accounts = [{"auth": "offline", "username": user + (str(i + 1) if count > 1 else "")} for i in range(count)]
             try:
                 radius = int(form.get("botRadius") or "256")
             except ValueError:
@@ -444,6 +450,7 @@ class BotManager:
             cfg = {
                 "host": "127.0.0.1", "port": proxy_port,
                 "accounts": accounts,
+                "authOnly": bool(auth_only),
                 "centerOnSpawn": str(form.get("botCenterOnSpawn", "")).lower() in BOOL_TRUE,
                 "radius": radius,
                 "preferFly": str(form.get("botPreferFly", "")).lower() in BOOL_TRUE,
@@ -463,7 +470,10 @@ class BotManager:
                 self.log.clear()
                 self.log_total = 0
             self.msa = None
-            self._append("$ node scrape.js --config bot-config.json  (%d bot(s) -> 127.0.0.1:%d)" % (count, proxy_port))
+            if auth_only:
+                self._append("$ node scrape.js --auth-only  (Microsoft sign-in for %s; no exploring)" % user)
+            else:
+                self._append("$ node scrape.js --config bot-config.json  (%d bot(s) -> 127.0.0.1:%d)" % (count, proxy_port))
             try:
                 self.proc = subprocess.Popen(
                     ["node", SCRAPER_JS, "--config", cfg_path],
@@ -892,6 +902,16 @@ def api_bot_start():
     # The bot runs inside the container and connects to the proxy on its fixed internal port — the
     # same port the downloader listens on (CONTAINER_PROXY_PORT), not the host-side display hint.
     ok, msg = bot_manager.start(request.form, CONTAINER_PROXY_PORT)
+    return jsonify({"ok": ok, "message": msg, "status": bot_manager.status()}), (200 if ok else 409)
+
+
+@app.route("/api/bot/auth", methods=["POST"])
+@login_required
+def api_bot_auth():
+    # Dedicated "Sign in to Microsoft (bot)" action: runs the device-code flow only (no exploring) and
+    # caches the token under /data so the bot connects silently afterwards. The device code is surfaced
+    # (and auto-copied) in the UI via the same MSA_CODE marker the explore path uses.
+    ok, msg = bot_manager.start(request.form, CONTAINER_PROXY_PORT, auth_only=True)
     return jsonify({"ok": ok, "message": msg, "status": bot_manager.status()}), (200 if ok else 409)
 
 
