@@ -22,7 +22,7 @@ Settings persist between launches, and unhandled errors are caught and logged ra
 
 **Startup & crash handling.** `App.OnStartup` (`App.xaml.cs`) wires three global handlers — `DispatcherUnhandledException` (marked `Handled = true` so the app survives UI errors), `AppDomain.CurrentDomain.UnhandledException`, and `TaskScheduler.UnobservedTaskException`. Each calls `Report`, which appends the exception to `%LOCALAPPDATA%\WorldDownloaderManager\crash.log` and shows a `MessageBox`.
 
-**Settings.** `Settings` (`Settings.cs`) is a POCO serialized to `%APPDATA%\WorldDownloaderManager\settings.json`. `Settings.Load()` falls back to defaults on any read/parse error and, if `DataFolder` is empty, defaults it to `%USERPROFILE%\WorldDownloader`. Defaults: `WebPort=8080`, `ProxyPort=25565`, `Image=ghcr.io/cafepromenade/minecraft-world-downloader:latest`, `ContainerName=minecraft-world-downloader`, `RequireLogin=false`, `Username=admin`, `Password=""`. `Save()` swallows write errors.
+**Settings.** `Settings` (`Settings.cs`) is a POCO serialized to `%APPDATA%\WorldDownloaderManager\settings.json`. `Settings.Load()` falls back to defaults on any read/parse error and, if `DataFolder` is empty, defaults it to `%USERPROFILE%\WorldDownloader`. Defaults: `WebPort=8080`, `ProxyPort=25565`, `Image=ghcr.io/cafepromenade/minecraft-world-downloader-web:latest`, `ContainerName=minecraft-world-downloader`, `RequireLogin=false`, `Username=admin`, `Password=""`. `Load()` also migrates the legacy `...minecraft-world-downloader:latest` image name to the `-web` package (whose `:latest` actually receives updates). `Save()` swallows write errors.
 
 **Docker integration.** `DockerService` (`DockerService.cs`) is a thin wrapper over the `docker` CLI. `RunAsync` launches `docker` with `UseShellExecute=false`, streams stdout/stderr (UTF-8) line-by-line to the `OnOutput` callback (the app routes this to the log box), and returns `(exitCode, capturedOutput)`. Key operations:
 - `IsDockerAvailableAsync` → `docker version --format {{.Server.Version}}` (success = exit 0).
@@ -67,7 +67,7 @@ The app has **no command-line flags**. User-facing configuration lives in the UI
 - **Data folder** — host path mounted as `/data`.
 - **Web console port** (`WebPort`, default `8080`) — published as `<WebPort>:8080`.
 - **Minecraft proxy port** (`ProxyPort`, default `25565`) — published as `<ProxyPort>:25565`.
-- **Docker image** (`Image`, default `ghcr.io/cafepromenade/minecraft-world-downloader:latest`).
+- **Docker image** (`Image`, default `ghcr.io/cafepromenade/minecraft-world-downloader-web:latest`).
 - **Require a login** (`RequireLogin`, default off) with **Console username** (`Username`, default `admin`) and **Console password** (`Password`). When enabled (and password non-empty) these are passed to the container as `WEB_USERNAME` / `WEB_PASSWORD` env vars (the generated compose always sets `WEB_PORT: "8080"`).
 - `ContainerName` (default `minecraft-world-downloader`) — persisted but not surfaced as an editable field in the UI.
 

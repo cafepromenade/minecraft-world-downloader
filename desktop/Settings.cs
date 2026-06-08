@@ -9,7 +9,7 @@ public class Settings
     public string DataFolder { get; set; } = "";
     public int WebPort { get; set; } = 8080;
     public int ProxyPort { get; set; } = 25565;
-    public string Image { get; set; } = "ghcr.io/cafepromenade/minecraft-world-downloader:latest";
+    public string Image { get; set; } = "ghcr.io/cafepromenade/minecraft-world-downloader-web:latest";
     public string ContainerName { get; set; } = "minecraft-world-downloader";
     public bool RequireLogin { get; set; } = false;
     public string Username { get; set; } = "admin";
@@ -43,6 +43,13 @@ public class Settings
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 "WorldDownloader");
         }
+
+        // Migrate the legacy GHCR package name to the new "-web" package. The old package's ACL blocked
+        // automated publishing, so its :latest is stale; point existing installs at the package that
+        // actually receives updates.
+        if (s.Image == "ghcr.io/cafepromenade/minecraft-world-downloader:latest")
+            s.Image = "ghcr.io/cafepromenade/minecraft-world-downloader-web:latest";
+
         return s;
     }
 
