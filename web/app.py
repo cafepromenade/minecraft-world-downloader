@@ -116,9 +116,44 @@ OPTIONS = [
      "Draw extended chunks", "Draw extended (re-sent) chunks to the map."),
     ("Render distance & map", "enableCaveRenderMode", "--enable-cave-mode", "bool", False, "Cave render mode",
      "Automatically switch to cave render mode when underground."),
+    ("Render distance & map", "disableMapRender", "--disable-map-render", "bool", False, "Disable live map",
+     "Turn off the headless overview-map rendering used by the live Map page (on by default)."),
+
+    # ---- Auto-open containers (record nearby container contents automatically) ----
+    ("Auto-open containers", "autoOpenContainers", "--auto-open-containers", "bool", False, "Auto-open containers",
+     "Automatically open nearby containers (one at a time, rate-limited) to record their contents as "
+     "you move. EXPERIMENTAL — may trip server anti-cheat."),
+    ("Auto-open containers", "autoOpenReach", "--auto-open-reach", "text", "4.0", "Reach (blocks)",
+     "Max distance to a container to auto-open it; keep at/below survival reach (default 4.0)."),
+    ("Auto-open containers", "autoOpenDelay", "--auto-open-delay", "int", "400", "Delay (ms)",
+     "Minimum milliseconds between auto-opened containers (default 400). Higher = safer."),
+    ("Auto-open containers", "autoOpenGamemodes", "--auto-open-gamemodes", "text", "all", "Gamemodes",
+     "Which gamemodes the sweep runs in: 'all', or a comma list of survival,creative,adventure,spectator."),
+    ("Auto-open containers", "autoOpenAllowChestNearPlayers", "--auto-open-allow-chest-near-players", "bool", False,
+     "Open chests near players", "By default chests/trapped chests/barrels/shulkers are NOT opened while "
+     "another player is within the radius below. Enable to open them anyway."),
+    ("Auto-open containers", "autoOpenPlayerRadius", "--auto-open-player-radius", "text", "100", "Player radius (blocks)",
+     "Radius for the 'another player nearby' check that protects chests/barrels/shulkers (default 100)."),
+    ("Auto-open containers", "autoOpenLog", "--auto-open-log", "text", "", "Item log file",
+     "File to append a human-readable list of captured items (blank = 'auto-open-items.log' beside the world)."),
+
+    # ---- Chat auto-reply ----
+    ("Chat auto-reply", "autoReply", "--auto-reply", "bool", False, "Enable auto-reply",
+     "When an incoming chat message's trigger-coloured text matches the trigger below, send that "
+     "message's reply-coloured text back to the server as REAL chat. EXPERIMENTAL."),
+    ("Chat auto-reply", "autoReplyTrigger", "--auto-reply-trigger", "text", "", "Trigger text",
+     "Exact text that triggers a reply (required). E.g. \"You have been warned by Console for\"."),
+    ("Chat auto-reply", "autoReplyTriggerColor", "--auto-reply-trigger-color", "text", "yellow", "Trigger colour",
+     "Minecraft colour name of the text that must match the trigger (default yellow)."),
+    ("Chat auto-reply", "autoReplyColor", "--auto-reply-color", "text", "red", "Reply colour",
+     "Minecraft colour name of the text that is sent back as the reply (default red)."),
+    ("Chat auto-reply", "autoReplyDelay", "--auto-reply-delay", "int", "1500", "Reply delay (ms)",
+     "Minimum milliseconds between auto-replies (default 1500), to avoid chat spam / kicks."),
 
     ("Advanced", "disableInfoMessages", "--disable-messages", "bool", False, "Disable info messages",
      "Disable various info messages (e.g. chest saving)."),
+    ("Advanced", "enableVoiceProxy", "--enable-voice-proxy", "bool", False, "Voice-chat proxy",
+     "Proxy Simple Voice Chat / PlasmoVoice UDP through the downloader (map the UDP port in compose too)."),
     ("Advanced", "devMode", "--dev-mode", "bool", False, "Developer mode",
      "Enable developer mode."),
 ]

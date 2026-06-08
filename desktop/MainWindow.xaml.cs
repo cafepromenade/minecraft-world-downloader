@@ -193,6 +193,16 @@ public partial class MainWindow : Window
 
     private void Open_Click(object sender, RoutedEventArgs e) => OpenConsole();
 
+    private void OpenLiveMap_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            int port = ParsePort(WebPortBox.Text, 8080);
+            Process.Start(new ProcessStartInfo($"http://localhost:{port}/map") { UseShellExecute = true });
+        }
+        catch (Exception ex) { AppendLog("Could not open live map: " + ex.Message); }
+    }
+
     private void OpenConsole()
     {
         try

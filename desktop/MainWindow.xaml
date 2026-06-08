@@ -282,6 +282,9 @@
                                 ToolTip="Stop and remove the running container. Your saved worlds in the data folder are kept." />
                         <Button x:Name="OpenBtn" Style="{StaticResource Btn}" Content="Open console" Margin="10,0,0,0" Click="Open_Click"
                                 ToolTip="Open the console website (http://localhost:&lt;web port&gt;) in your default browser." />
+                        <Button x:Name="LiveMapBtn" Style="{StaticResource Btn}" Content="Live map" Margin="10,0,0,0" Click="OpenLiveMap_Click"
+                                AutomationProperties.Name="Open the live overview map"
+                                ToolTip="Open the live overview map (http://localhost:&lt;web port&gt;/map) in your browser." />
                         <Button x:Name="PullBtn" Style="{StaticResource Btn}" Content="Update image" Margin="10,0,0,0" Click="Pull_Click"
                                 ToolTip="Download the latest version of the Docker image from the registry." />
                         <Button x:Name="ComposeBtn" Style="{StaticResource Btn}" Content="Generate compose" Margin="10,0,0,0" Click="GenerateCompose_Click"
