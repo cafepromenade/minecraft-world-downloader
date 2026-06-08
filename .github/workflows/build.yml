@@ -149,7 +149,8 @@ jobs:
         continue-on-error: true
         run: |
           START_TIME=$(date +%s%N)
-          mvn -B test 2>&1 | tee test-output.log || TEST_FAILED=true
+          # tests are skipped by default in the pom (so `mvn package` just builds); opt back in here
+          mvn -B test -DskipTests=false 2>&1 | tee test-output.log || TEST_FAILED=true
           END_TIME=$(date +%s%N)
           DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
           echo "TEST_TIME=${DURATION}ms" >> $GITHUB_ENV
