@@ -100,6 +100,21 @@ public class ClientBoundGamePacketHandler extends PacketHandler {
             return true;
         });
 
+        // PLAY-phase kick. The server kicked the client AFTER login (the common cause of a join that
+        // "connects then instantly drops" with no login error). Log the reason for debugging; the packet
+        // is still forwarded so the client shows its disconnect screen. Reason is NBT for 1.20.3+, else JSON.
+        operations.put("Disconnect", provider -> {
+            try {
+                String reason = Config.versionReporter().isAtLeast(Version.V1_20_4)
+                        ? String.valueOf(provider.readNbtTag())
+                        : provider.readString();
+                System.out.println("[disconnect] server kicked you in-game: " + reason);
+            } catch (Exception ex) {
+                System.out.println("[disconnect] server sent an in-game Disconnect (reason could not be read)");
+            }
+            return true;
+        });
+
         operations.put("MoveEntityPos", provider -> {
             entityRegistry.updatePositionRelative(provider);
             return true;

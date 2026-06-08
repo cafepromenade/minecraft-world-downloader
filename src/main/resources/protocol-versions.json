@@ -172,7 +172,8 @@
 				"0x26": "MoveEntityPos",
 				"0x4C": "TeleportEntity",
 				"0x32": "RemoveEntities",
-				"0x18": "CustomPayload"
+				"0x18": "CustomPayload",
+				"0x1A": "Disconnect"
 			},
 			"serverBound": {
 				"0x02": "ChatMessage",
