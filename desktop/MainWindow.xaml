@@ -350,6 +350,71 @@
                 </StackPanel>
             </Border>
 
+            <!-- Bot (auto-explore) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource H}" Text="Bot (auto-explore)" />
+                    <TextBlock Style="{StaticResource Desc}"
+                               Text="Run mineflayer bot(s) that connect through the proxy and walk/fly a grid so the whole area downloads automatically. Requires Node.js on this PC."
+                               Margin="2,2,0,8" />
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Account" />
+                            <ComboBox x:Name="BotAuthBox" AutomationProperties.Name="Bot account type">
+                                <ComboBoxItem Content="Offline" IsSelected="True" />
+                                <ComboBoxItem Content="Microsoft" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Style="{StaticResource Lbl}" Text="Username (or MS email)" />
+                            <TextBox x:Name="BotUserBox" Style="{StaticResource Tb}" Text="Scraper"
+                                     AutomationProperties.Name="Bot username" />
+                        </StackPanel>
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Radius (blocks)" />
+                            <TextBox x:Name="BotRadiusBox" Style="{StaticResource Tb}" Text="256"
+                                     AutomationProperties.Name="Scrape radius in blocks" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Style="{StaticResource Lbl}" Text="Bots" />
+                            <TextBox x:Name="BotCountBox" Style="{StaticResource Tb}" Text="1"
+                                     AutomationProperties.Name="Number of bots" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                            <TextBlock Style="{StaticResource Lbl}" Text="Login password (AuthMe)" />
+                            <TextBox x:Name="BotLoginPwBox" Style="{StaticResource Tb}"
+                                     AutomationProperties.Name="Auto-login password" />
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <CheckBox x:Name="BotCenterOnSpawn" Content="Center on spawn" IsChecked="True"
+                                  Foreground="{StaticResource Text}" Margin="0,0,12,0" AutomationProperties.Name="Center the area on spawn" />
+                        <CheckBox x:Name="BotPreferFly" Content="Fly (creative)" IsChecked="False"
+                                  Foreground="{StaticResource Text}" Margin="0,0,12,0" AutomationProperties.Name="Prefer flying in creative" />
+                        <CheckBox x:Name="BotRevisit" Content="Revisit downloaded" IsChecked="False"
+                                  Foreground="{StaticResource Text}" AutomationProperties.Name="Revisit already-downloaded chunks" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button x:Name="BotStartBtn" Style="{StaticResource AccentBtn}" Content="Start bot"
+                                Click="BotStart_Click" AutomationProperties.Name="Start the auto-explore bot"
+                                ToolTip="Connect the bot(s) to the proxy and start exploring (installs scraper deps on first run)." />
+                        <Button x:Name="BotStopBtn" Style="{StaticResource DangerBtn}" Content="Stop bot" Margin="10,0,0,0"
+                                IsEnabled="False" Click="BotStop_Click" AutomationProperties.Name="Stop the bot" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Output -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>

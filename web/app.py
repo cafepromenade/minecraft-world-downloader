@@ -341,6 +341,117 @@ downloader = Downloader()
 
 
 # --------------------------------------------------------------------------------------
+# Auto-explore bot (mineflayer scraper) — runs node scrape.js inside the container
+# --------------------------------------------------------------------------------------
+SCRAPER_DIR = os.environ.get("SCRAPER_DIR", "/app/scraper")
+SCRAPER_JS = os.path.join(SCRAPER_DIR, "scrape.js")
+
+
+class BotManager:
+    def __init__(self):
+        self.proc = None
+        self.lock = threading.Lock()
+        self.log = deque(maxlen=3000)
+        self.log_total = 0
+        self.log_lock = threading.Lock()
+
+    def _append(self, line):
+        with self.log_lock:
+            self.log.append(line)
+            self.log_total += 1
+
+    def logs_since(self, since):
+        with self.log_lock:
+            start = self.log_total - len(self.log)
+            if since < start:
+                since = start
+            return self.log_total, list(self.log)[since - start:]
+
+    def _reader(self, proc):
+        try:
+            for line in iter(proc.stdout.readline, ""):
+                if line == "":
+                    break
+                self._append(line.rstrip("\n"))
+        finally:
+            code = proc.wait()
+            self._append("=== bot exited (code %s) ===" % code)
+
+    def is_running(self):
+        return self.proc is not None and self.proc.poll() is None
+
+    def status(self):
+        return {"running": self.is_running(), "pid": self.proc.pid if self.is_running() else None}
+
+    def start(self, form, proxy_port):
+        with self.lock:
+            if self.is_running():
+                return False, "Bot is already running."
+            if not os.path.isfile(SCRAPER_JS):
+                return False, "Bot is not available in this image."
+            auth = "microsoft" if form.get("botAuth") == "microsoft" else "offline"
+            user = (form.get("botUser") or "Scraper").strip() or "Scraper"
+            try:
+                count = max(1, int(form.get("botCount") or "1"))
+            except ValueError:
+                count = 1
+            accounts = [{"auth": auth, "username": user + (str(i + 1) if count > 1 else "")} for i in range(count)]
+            try:
+                radius = int(form.get("botRadius") or "256")
+            except ValueError:
+                radius = 256
+            cfg = {
+                "host": "127.0.0.1", "port": proxy_port,
+                "accounts": accounts,
+                "centerOnSpawn": str(form.get("botCenterOnSpawn", "")).lower() in BOOL_TRUE,
+                "radius": radius,
+                "preferFly": str(form.get("botPreferFly", "")).lower() in BOOL_TRUE,
+                "revisit": str(form.get("botRevisit", "")).lower() in BOOL_TRUE,
+                "visitedFile": os.path.join(DATA_DIR, "bot-visited.json"),
+            }
+            pw = (form.get("botLoginPassword") or "").strip()
+            if pw:
+                cfg["loginPassword"] = pw
+            cfg_path = os.path.join(DATA_DIR, "bot-config.json")
+            try:
+                with open(cfg_path, "w") as fh:
+                    json.dump(cfg, fh, indent=2)
+            except OSError as exc:
+                return False, "Could not write bot config: %s" % exc
+            with self.log_lock:
+                self.log.clear()
+                self.log_total = 0
+            self._append("$ node scrape.js --config bot-config.json  (%d bot(s) -> 127.0.0.1:%d)" % (count, proxy_port))
+            try:
+                self.proc = subprocess.Popen(
+                    ["node", SCRAPER_JS, "--config", cfg_path],
+                    cwd=SCRAPER_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            except OSError as exc:
+                self._append("Failed to start bot: %s" % exc)
+                return False, str(exc)
+            threading.Thread(target=self._reader, args=(self.proc,), daemon=True).start()
+            return True, "Bot started."
+
+    def stop(self):
+        with self.lock:
+            if not self.is_running():
+                return False, "Bot is not running."
+            self._append("=== stopping bot ===")
+            try:
+                self.proc.terminate()
+                try:
+                    self.proc.wait(timeout=8)
+                except subprocess.TimeoutExpired:
+                    self.proc.kill()
+            except OSError:
+                pass
+            return True, "Bot stopped."
+
+
+bot_manager = BotManager()
+
+
+# --------------------------------------------------------------------------------------
 # Minecraft account store (Microsoft / manual / offline) -- persisted to /data/auth.json
 # --------------------------------------------------------------------------------------
 class AuthStore:
@@ -727,6 +838,42 @@ def map_tile(dim, mode, rx, rz):
     resp = send_file(full, mimetype="image/png")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+# --------------------------------------------------------------------------------------
+# Auto-explore bot control
+# --------------------------------------------------------------------------------------
+@app.route("/api/bot/start", methods=["POST"])
+@login_required
+def api_bot_start():
+    cfg = load_config()
+    try:
+        proxy_port = int(cfg.get("portLocal") or "25565")
+    except ValueError:
+        proxy_port = 25565
+    ok, msg = bot_manager.start(request.form, proxy_port)
+    return jsonify({"ok": ok, "message": msg, "status": bot_manager.status()}), (200 if ok else 409)
+
+
+@app.route("/api/bot/stop", methods=["POST"])
+@login_required
+def api_bot_stop():
+    ok, msg = bot_manager.stop()
+    return jsonify({"ok": ok, "message": msg, "status": bot_manager.status()}), (200 if ok else 409)
+
+
+@app.route("/api/bot/status")
+@login_required
+def api_bot_status():
+    return jsonify(bot_manager.status())
+
+
+@app.route("/api/bot/logs")
+@login_required
+def api_bot_logs():
+    since = request.args.get("since", default=0, type=int)
+    total, lines = bot_manager.logs_since(since)
+    return jsonify({"total": total, "lines": lines})
 
 
 @app.route("/healthz")

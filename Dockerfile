@@ -12,14 +12,21 @@ RUN mvn -q -B clean package -DskipTests
 FROM eclipse-temurin:21-jre
 
 ENV DEBIAN_FRONTEND=noninteractive
+# python3 = web console; nodejs = the mineflayer auto-explore bot (run from the console)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 python3-pip \
+ && apt-get install -y --no-install-recommends python3 python3-pip curl ca-certificates gnupg \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=builder /build/target/world-downloader.jar /app/world-downloader.jar
 COPY web /app/web
 RUN pip3 install --no-cache-dir --break-system-packages -r /app/web/requirements.txt
+
+# auto-explore bot (mineflayer); deps installed at build so the console can launch it
+COPY scraper /app/scraper
+RUN cd /app/scraper && npm install --no-audit --no-fund --omit=dev
 
 ENV JAR_PATH=/app/world-downloader.jar \
     DATA_DIR=/data \

@@ -12,6 +12,7 @@ public partial class MainWindow : Window
 {
     private readonly Settings _settings;
     private readonly DockerService _docker = new();
+    private Process? _botProc;
 
     public MainWindow()
     {
@@ -363,5 +364,134 @@ public partial class MainWindow : Window
         }
         AppendLog("Python was not found on PATH (tried python, python3, py).");
         return -1;
+    }
+
+    // ---- Auto-explore bot (mineflayer scraper) -----------------------------------------------
+    private static string? FindScraper(string dataFolder)
+    {
+        foreach (var c in new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "scraper", "scrape.js"),
+            Path.Combine(AppContext.BaseDirectory, "..", "scraper", "scrape.js"),
+            Path.Combine(dataFolder ?? "", "scraper", "scrape.js"),
+        })
+        {
+            try { if (File.Exists(c)) return Path.GetFullPath(c); } catch { /* ignore */ }
+        }
+        return null;
+    }
+
+    private static string JsonEsc(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    private async void BotStart_Click(object sender, RoutedEventArgs e)
+    {
+        SaveFromUi();
+        if (_botProc != null && !_botProc.HasExited) { SetStatus("warn", "The bot is already running."); return; }
+        if (string.IsNullOrWhiteSpace(_settings.DataFolder)) { SetStatus("warn", "Pick a data folder first."); return; }
+        var scrape = FindScraper(_settings.DataFolder);
+        if (scrape == null) { SetStatus("error", "Could not find scraper/scrape.js (expected next to the app or in the data folder)."); return; }
+        string scraperDir = Path.GetDirectoryName(scrape)!;
+
+        string auth = (BotAuthBox.SelectedItem as ComboBoxItem)?.Content?.ToString() == "Microsoft" ? "microsoft" : "offline";
+        int count = Math.Max(1, ParsePort(BotCountBox.Text, 1));
+        var accounts = new System.Text.StringBuilder();
+        for (int i = 0; i < count; i++)
+        {
+            if (i > 0) accounts.Append(',');
+            string user = BotUserBox.Text.Trim();
+            if (string.IsNullOrEmpty(user)) user = "Scraper";
+            if (count > 1) user += (i + 1);
+            accounts.Append($"{{\"auth\":\"{auth}\",\"username\":\"{JsonEsc(user)}\"}}");
+        }
+
+        var cfg = new System.Text.StringBuilder();
+        cfg.Append('{');
+        cfg.Append("\"host\":\"127.0.0.1\",\"port\":").Append(_settings.ProxyPort).Append(',');
+        cfg.Append("\"accounts\":[").Append(accounts).Append("],");
+        cfg.Append("\"centerOnSpawn\":").Append(BotCenterOnSpawn.IsChecked == true ? "true" : "false").Append(',');
+        cfg.Append("\"radius\":").Append(ParsePort(BotRadiusBox.Text, 256)).Append(',');
+        cfg.Append("\"preferFly\":").Append(BotPreferFly.IsChecked == true ? "true" : "false").Append(',');
+        cfg.Append("\"revisit\":").Append(BotRevisit.IsChecked == true ? "true" : "false").Append(',');
+        if (!string.IsNullOrWhiteSpace(BotLoginPwBox.Text))
+            cfg.Append("\"loginPassword\":\"").Append(JsonEsc(BotLoginPwBox.Text.Trim())).Append("\",");
+        cfg.Append("\"visitedFile\":\"")
+           .Append(JsonEsc(Path.Combine(_settings.DataFolder, "bot-visited.json").Replace("\\", "/")))
+           .Append("\"}");
+        string cfgPath = Path.Combine(scraperDir, "ui-config.json");
+        try { File.WriteAllText(cfgPath, cfg.ToString()); }
+        catch (Exception ex) { SetStatus("error", "Could not write bot config: " + ex.Message); return; }
+
+        Busying(true);
+        BotStartBtn.IsEnabled = false; BotStopBtn.IsEnabled = true;
+        try
+        {
+            if (!Directory.Exists(Path.Combine(scraperDir, "node_modules")))
+            {
+                AppendLog("Installing bot dependencies (first run, this may take a minute)...");
+                await RunToExitAsync(new[] { "npm.cmd", "npm" }, new[] { "install", "--no-audit", "--no-fund" }, scraperDir);
+            }
+            AppendLog("Starting bot...");
+            _botProc = StartProc(new[] { "node", "node.exe" }, new[] { scrape, "--config", cfgPath }, scraperDir);
+            if (_botProc == null)
+            {
+                SetStatus("error", "Node.js not found on PATH. Install Node.js to run the bot.");
+                BotStartBtn.IsEnabled = true; BotStopBtn.IsEnabled = false;
+            }
+            else
+            {
+                _botProc.EnableRaisingEvents = true;
+                _botProc.Exited += (_, _) => Dispatcher.Invoke(() =>
+                {
+                    AppendLog("Bot process exited.");
+                    BotStartBtn.IsEnabled = true; BotStopBtn.IsEnabled = false; _botProc = null;
+                });
+                SetStatus("success", "Bot started — exploring through the proxy. Watch the output below.");
+            }
+        }
+        catch (Exception ex) { SetStatus("error", "Could not start the bot: " + ex.Message); BotStartBtn.IsEnabled = true; BotStopBtn.IsEnabled = false; }
+        finally { Busying(false); }
+    }
+
+    private void BotStop_Click(object sender, RoutedEventArgs e)
+    {
+        try { if (_botProc != null && !_botProc.HasExited) _botProc.Kill(true); } catch { /* ignore */ }
+        _botProc = null;
+        BotStartBtn.IsEnabled = true; BotStopBtn.IsEnabled = false;
+        AppendLog("Bot stopped.");
+    }
+
+    /// <summary>Start a process, trying each exe candidate (e.g. node/node.exe, npm.cmd/npm), streaming output to the log.</summary>
+    private Process? StartProc(string[] exeCandidates, string[] args, string cwd)
+    {
+        foreach (var exe in exeCandidates)
+        {
+            var psi = new ProcessStartInfo(exe)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = cwd,
+            };
+            foreach (var a in args) psi.ArgumentList.Add(a);
+            try
+            {
+                var p = Process.Start(psi)!;
+                p.OutputDataReceived += (_, ev) => { if (ev.Data != null) AppendLog(ev.Data); };
+                p.ErrorDataReceived += (_, ev) => { if (ev.Data != null) AppendLog(ev.Data); };
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
+                return p;
+            }
+            catch { /* try next candidate */ }
+        }
+        return null;
+    }
+
+    private async Task RunToExitAsync(string[] exeCandidates, string[] args, string cwd)
+    {
+        var p = StartProc(exeCandidates, args, cwd);
+        if (p == null) { AppendLog($"Could not run {exeCandidates[0]} (not found on PATH)."); return; }
+        await p.WaitForExitAsync();
     }
 }

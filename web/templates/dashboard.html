@@ -122,6 +122,35 @@
         </form>
     </section>
 
+    <section class="panel bot-panel">
+        <h2><span class="material-symbols-rounded">smart_toy</span> Auto-explore bot</h2>
+        <p class="hint">Mineflayer bot(s) that connect through the proxy and walk/fly a grid so the whole
+            area downloads automatically. Start the downloader (and sign in) first.</p>
+        <div class="config-grid">
+            <label class="field">Account
+                <select id="botAuth">
+                    <option value="offline" selected>Offline</option>
+                    <option value="microsoft">Microsoft</option>
+                </select>
+            </label>
+            <label class="field">Username / MS email <input type="text" id="botUser" value="Scraper"></label>
+            <label class="field">Radius (blocks) <input type="number" id="botRadius" value="256"></label>
+            <label class="field">Bots <input type="number" id="botCount" value="1" min="1"></label>
+            <label class="field">Login password (AuthMe) <input type="text" id="botLoginPassword" placeholder="optional"></label>
+        </div>
+        <div class="actions" style="margin-top:8px">
+            <label class="switch-label small"><input type="checkbox" id="botCenterOnSpawn" checked><span class="switch"></span><span>Center on spawn</span></label>
+            <label class="switch-label small"><input type="checkbox" id="botPreferFly"><span class="switch"></span><span>Fly (creative)</span></label>
+            <label class="switch-label small"><input type="checkbox" id="botRevisit"><span class="switch"></span><span>Revisit downloaded</span></label>
+        </div>
+        <div class="actions">
+            <button type="button" id="botStartBtn" class="btn primary"><span class="material-symbols-rounded">smart_toy</span> Start bot</button>
+            <button type="button" id="botStopBtn" class="btn danger" disabled><span class="material-symbols-rounded">stop</span> Stop bot</button>
+            <span id="botStatus" class="badge stopped"><span class="dot"></span>stopped</span>
+        </div>
+        <div id="botMsg" class="alert" style="display:none"></div>
+    </section>
+
     <section class="panel log-panel">
         <div class="log-header">
             <h2><span class="material-symbols-rounded">terminal</span> Logs</h2>
@@ -281,6 +310,54 @@ $("msBtn").onclick = async () => {
 loadAuth(); loadWorldInfo(); poll();
 setInterval(poll, 1500);
 setInterval(loadWorldInfo, 5000);
+
+// ---- Auto-explore bot ----
+function botData() {
+    const fd = new FormData();
+    fd.set("botAuth", $("botAuth").value);
+    fd.set("botUser", $("botUser").value);
+    fd.set("botRadius", $("botRadius").value);
+    fd.set("botCount", $("botCount").value);
+    fd.set("botLoginPassword", $("botLoginPassword").value);
+    fd.set("botCenterOnSpawn", $("botCenterOnSpawn").checked ? "true" : "");
+    fd.set("botPreferFly", $("botPreferFly").checked ? "true" : "");
+    fd.set("botRevisit", $("botRevisit").checked ? "true" : "");
+    return fd;
+}
+function applyBot(st) {
+    if (!st) return;
+    const b = $("botStatus");
+    b.className = "badge " + (st.running ? "running" : "stopped");
+    b.innerHTML = '<span class="dot"></span>' + (st.running ? "running" : "stopped");
+    $("botStartBtn").disabled = !!st.running;
+    $("botStopBtn").disabled = !st.running;
+}
+$("botStartBtn").onclick = async () => {
+    try { const j = await (await fetch("api/bot/start", { method: "POST", body: botData() })).json();
+        showMsg("botMsg", j.message, j.ok); applyBot(j.status); }
+    catch (e) { showMsg("botMsg", "Error: " + e, false); }
+};
+$("botStopBtn").onclick = async () => {
+    try { const j = await (await fetch("api/bot/stop", { method: "POST" })).json();
+        showMsg("botMsg", j.message, j.ok); applyBot(j.status); }
+    catch (e) { showMsg("botMsg", "Error: " + e, false); }
+};
+let botSince = 0;
+async function botPoll() {
+    try {
+        applyBot(await (await fetch("api/bot/status")).json());
+        const r = await (await fetch("api/bot/logs?since=" + botSince)).json();
+        if (r.lines && r.lines.length) {
+            const pre = $("logs");
+            const base = pre.textContent === "Waiting for output…" ? "" : pre.textContent;
+            pre.textContent = base + (base ? "\n" : "") + r.lines.map(l => "[bot] " + l).join("\n");
+            botSince = r.total;
+            if ($("autoscroll").checked) pre.scrollTop = pre.scrollHeight;
+        }
+    } catch (e) { /* keep last */ }
+}
+setInterval(botPoll, 2000);
+botPoll();
 </script>
 <script src="{{ url_for('static', filename='a11y.js') }}"></script>
 </body>
