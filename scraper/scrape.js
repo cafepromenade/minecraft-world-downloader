@@ -118,28 +118,41 @@ class VisitedStore {
 // Build the list of target chunk coordinates for the configured area
 // ---------------------------------------------------------------------------------------------
 function buildTargets(cfg) {
-  let minCX, minCZ, maxCX, maxCZ;
+  const step = Math.max(1, cfg.chunkStep || 1);
+  let minCX, minCZ, maxCX, maxCZ, cCX, cCZ;
   if (cfg.bbox) {
     minCX = Math.floor(cfg.bbox.minX / 16); maxCX = Math.floor(cfg.bbox.maxX / 16);
     minCZ = Math.floor(cfg.bbox.minZ / 16); maxCZ = Math.floor(cfg.bbox.maxZ / 16);
+    cCX = Math.round((minCX + maxCX) / 2); cCZ = Math.round((minCZ + maxCZ) / 2);
   } else {
-    const cCX = Math.floor(cfg.center.x / 16), cCZ = Math.floor(cfg.center.z / 16);
+    cCX = Math.floor(cfg.center.x / 16); cCZ = Math.floor(cfg.center.z / 16);
     const r = Math.ceil(cfg.radius / 16);
     minCX = cCX - r; maxCX = cCX + r; minCZ = cCZ - r; maxCZ = cCZ + r;
   }
-  // Serpentine (boustrophedon) order: walk each column, snaking back on the next, so consecutive
-  // waypoints are always adjacent (~16 blocks). A distance-sorted spiral makes the bot crisscross the
-  // whole area between same-radius points, which is catastrophic for walking large areas.
+
+  // Square spiral OUT FROM THE CENTRE: starts at the player (centre/spawn) and every consecutive
+  // waypoint is adjacent (~16 blocks). This covers the area near the player first (no long trek to a
+  // corner) while never crisscrossing (which a distance-sort does and which kills walking speed).
+  const inBox = (x, z) => x >= minCX && x <= maxCX && z >= minCZ && z <= maxCZ;
+  const seen = new Set();
   const targets = [];
-  let flip = false;
-  for (let cx = minCX; cx <= maxCX; cx += cfg.chunkStep) {
-    const column = [];
-    for (let cz = minCZ; cz <= maxCZ; cz += cfg.chunkStep) {
-      column.push([cx, cz]);
+  const push = (x, z) => {
+    const k = x + ',' + z;
+    if (inBox(x, z) && !seen.has(k)) { seen.add(k); targets.push([x, z]); }
+  };
+  const total = (Math.floor((maxCX - minCX) / step) + 1) * (Math.floor((maxCZ - minCZ) / step) + 1);
+  let x = cCX, z = cCZ;
+  push(x, z);
+  const dirs = [[step, 0], [0, step], [-step, 0], [0, -step]];
+  let d = 0, run = 1, guard = 0;
+  const maxGuard = 8 * (total + 4);
+  while (targets.length < total && guard++ < maxGuard) {
+    for (let twice = 0; twice < 2; twice++) {
+      const [dx, dz] = dirs[d % 4];
+      for (let s = 0; s < run; s++) { x += dx; z += dz; push(x, z); }
+      d++;
     }
-    if (flip) column.reverse();
-    for (const t of column) targets.push(t);
-    flip = !flip;
+    run++;
   }
   return targets;
 }
