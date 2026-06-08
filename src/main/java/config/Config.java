@@ -429,6 +429,11 @@ public class Config {
                     + "mod JARs in .minecraft/mods, falling back to a deterministic per-name color.")
     public boolean moddedBlockColors = true;
 
+    @Option(name = "--disable-modded-block-colors",
+            usage = "Turn off modded-block map colouring (on by default). Modded blocks then stay "
+                    + "transparent on the map like other unknown blocks.")
+    public boolean disableModdedBlockColors = false;
+
     @Option(name = "--auto-open-containers",
             usage = "EXPERIMENTAL: automatically open nearby containers (within reach, one at a time, "
                     + "rate-limited) to record their contents as you move. May trip server anti-cheat.")
@@ -610,7 +615,7 @@ public class Config {
 
     public static boolean renderOtherPlayers() { return instance.renderOtherPlayers; }
 
-    public static boolean moddedBlockColors() { return instance.moddedBlockColors; }
+    public static boolean moddedBlockColors() { return instance.moddedBlockColors && !instance.disableModdedBlockColors; }
 
     public static boolean autoOpenContainers() { return instance.autoOpenContainers; }
 

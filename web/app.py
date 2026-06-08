@@ -118,6 +118,8 @@ OPTIONS = [
      "Automatically switch to cave render mode when underground."),
     ("Render distance & map", "disableMapRender", "--disable-map-render", "bool", False, "Disable live map",
      "Turn off the headless overview-map rendering used by the live Map page (on by default)."),
+    ("Render distance & map", "disableModdedBlockColors", "--disable-modded-block-colors", "bool", False,
+     "Disable modded block colours", "Stop colouring modded (non-minecraft:) blocks on the map (on by default)."),
 
     # ---- Auto-open containers (record nearby container contents automatically) ----
     ("Auto-open containers", "autoOpenContainers", "--auto-open-containers", "bool", False, "Auto-open containers",
@@ -136,6 +138,9 @@ OPTIONS = [
      "Radius for the 'another player nearby' check that protects chests/barrels/shulkers (default 100)."),
     ("Auto-open containers", "autoOpenLog", "--auto-open-log", "text", "", "Item log file",
      "File to append a human-readable list of captured items (blank = 'auto-open-items.log' beside the world)."),
+    ("Auto-open containers", "autoOpenState", "--auto-open-state", "text", "", "State file",
+     "File recording which containers were already opened so none is re-opened (blank = "
+     "'auto-open-attempted.txt' beside the world)."),
 
     # ---- Chat auto-reply ----
     ("Chat auto-reply", "autoReply", "--auto-reply", "bool", False, "Enable auto-reply",
@@ -154,6 +159,9 @@ OPTIONS = [
      "Disable various info messages (e.g. chest saving)."),
     ("Advanced", "enableVoiceProxy", "--enable-voice-proxy", "bool", False, "Voice-chat proxy",
      "Proxy Simple Voice Chat / PlasmoVoice UDP through the downloader (map the UDP port in compose too)."),
+    ("Advanced", "containerMessageFormat", "--container-message-format", "text", "", "Container message format",
+     "Template for the saved-container action-bar message. Placeholders: {type} {count} {x} {y} {z} "
+     "(blank = default '{type} ({count}) - {x} {y} {z}')."),
     ("Advanced", "devMode", "--dev-mode", "bool", False, "Developer mode",
      "Enable developer mode."),
 ]
