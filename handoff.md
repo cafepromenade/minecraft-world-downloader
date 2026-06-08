@@ -2,6 +2,8 @@
 
 A complete handoff for the **cafepromenade** fork of `minecraft-world-downloader`. For build/test/coding
 conventions see [`AGENTS.md`](AGENTS.md); for user docs see [`README.md`](README.md) and `docs/wiki/`.
+**Per-feature handoff docs** (one detailed document per feature) live in
+[`docs/features/`](docs/features/README.md).
 
 ---
 
