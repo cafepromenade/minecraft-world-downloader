@@ -92,7 +92,7 @@ public class ProxyServer extends Thread {
                         System.out.println("[disconnect] client closed the connection. Waiting for new connection...");
                     } catch (Throwable ex) {
                         // this thread reads FROM the client, so an error here is the CLIENT side dropping
-                        System.out.println("[disconnect] client connection error: " + ex + " — waiting for new connection...");
+                        System.out.println("[disconnect] client connection error: " + ex + " - waiting for new connection...");
                         ex.printStackTrace();
                         connectionManager.reset();
                     }
@@ -112,7 +112,7 @@ public class ProxyServer extends Thread {
                     System.out.println("[disconnect] server closed the connection. Waiting for new connection...");
                 } catch (Throwable ex) {
                     // this thread reads FROM the server, so an error here is the SERVER side dropping
-                    System.out.println("[disconnect] server connection error: " + ex + " — waiting for new connection...");
+                    System.out.println("[disconnect] server connection error: " + ex + " - waiting for new connection...");
                     ex.printStackTrace();
                     connectionManager.reset();
                 }
