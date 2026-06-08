@@ -148,6 +148,16 @@
             <button type="button" id="botStopBtn" class="btn danger" disabled><span class="material-symbols-rounded">stop</span> Stop bot</button>
             <span id="botStatus" class="badge stopped"><span class="dot"></span>stopped</span>
         </div>
+
+        <!-- Microsoft device-code sign-in for the bot (shown only while a login is pending) -->
+        <div id="botMsa" class="auth-box" style="display:none">
+            <p><strong>Microsoft sign-in for the bot</strong> — open
+               <a id="botMsaLink" href="#" target="_blank" rel="noopener">microsoft.com/link</a>
+               and enter this code:</p>
+            <div class="code" id="botMsaCode">--------</div>
+            <button type="button" class="btn small" id="botMsaCopy"><span class="material-symbols-rounded">content_copy</span> Copy code</button>
+            <p class="muted" id="botMsaHint">Waiting for you to sign in… (only needed once; the token is then cached).</p>
+        </div>
         <div id="botMsg" class="alert" style="display:none"></div>
     </section>
 
@@ -331,7 +341,22 @@ function applyBot(st) {
     b.innerHTML = '<span class="dot"></span>' + (st.running ? "running" : "stopped");
     $("botStartBtn").disabled = !!st.running;
     $("botStopBtn").disabled = !st.running;
+    // Microsoft device-code sign-in: surface the code + link while one is pending
+    const box = $("botMsa");
+    if (st.msa && st.msa.code) {
+        $("botMsaCode").textContent = st.msa.code;
+        const link = $("botMsaLink");
+        link.href = st.msa.url || "https://www.microsoft.com/link";
+        link.textContent = (st.msa.url || "microsoft.com/link").replace(/^https?:\/\//, "");
+        box.style.display = "block";
+    } else {
+        box.style.display = "none";
+    }
 }
+$("botMsaCopy").onclick = () => {
+    const c = $("botMsaCode").textContent;
+    try { navigator.clipboard.writeText(c); showMsg("botMsg", "Code copied.", true); } catch (e) {}
+};
 $("botStartBtn").onclick = async () => {
     try { const j = await (await fetch("api/bot/start", { method: "POST", body: botData() })).json();
         showMsg("botMsg", j.message, j.ok); applyBot(j.status); }

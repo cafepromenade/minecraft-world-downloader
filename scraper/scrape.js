@@ -177,9 +177,12 @@ function botOptionsFor(cfg, account, index) {
     fs.mkdirSync(opts.profilesFolder, { recursive: true });
     opts.onMsaCode = (data) => {
       // data = { user_code, verification_uri, message, ... }. message already includes a microsoft.com/link shortcut.
+      const url = data.verification_uri || 'https://www.microsoft.com/link';
       console.log(`[bot${index + 1}] ===== MICROSOFT SIGN-IN REQUIRED =====`);
-      console.log(`[bot${index + 1}] ${data.message || ('Open ' + data.verification_uri + ' and enter code ' + data.user_code)}`);
-      console.log(`[bot${index + 1}] (code ${data.user_code} at ${data.verification_uri || 'https://microsoft.com/link'}) — this is only needed once; the token is then cached.`);
+      console.log(`[bot${index + 1}] ${data.message || ('Open ' + url + ' and enter code ' + data.user_code)}`);
+      console.log(`[bot${index + 1}] (code ${data.user_code} at ${url}) — only needed once; the token is then cached.`);
+      // machine-readable marker so the web console can surface the code in the UI
+      console.log('MSA_CODE ' + JSON.stringify({ bot: index + 1, code: data.user_code, url }));
     };
   } else {
     opts.auth = 'offline';

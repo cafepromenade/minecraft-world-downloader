@@ -358,6 +358,7 @@ class BotManager:
         self.log = deque(maxlen=3000)
         self.log_total = 0
         self.log_lock = threading.Lock()
+        self.msa = None   # {code, url} while a Microsoft device-code sign-in is pending
 
     def _append(self, line):
         with self.log_lock:
@@ -376,16 +377,29 @@ class BotManager:
             for line in iter(proc.stdout.readline, ""):
                 if line == "":
                     break
-                self._append(line.rstrip("\n"))
+                line = line.rstrip("\n")
+                # Surface the Microsoft device code in the web UI; clear it once a bot connects.
+                if line.startswith("MSA_CODE "):
+                    try:
+                        self.msa = json.loads(line[len("MSA_CODE "):])
+                    except ValueError:
+                        pass
+                    continue
+                if "spawned at" in line:
+                    self.msa = None
+                self._append(line)
         finally:
             code = proc.wait()
+            self.msa = None
             self._append("=== bot exited (code %s) ===" % code)
 
     def is_running(self):
         return self.proc is not None and self.proc.poll() is None
 
     def status(self):
-        return {"running": self.is_running(), "pid": self.proc.pid if self.is_running() else None}
+        return {"running": self.is_running(),
+                "pid": self.proc.pid if self.is_running() else None,
+                "msa": self.msa}
 
     def start(self, form, proxy_port):
         with self.lock:
@@ -399,7 +413,12 @@ class BotManager:
                 count = max(1, int(form.get("botCount") or "1"))
             except ValueError:
                 count = 1
-            accounts = [{"auth": auth, "username": user + (str(i + 1) if count > 1 else "")} for i in range(count)]
+            if auth == "microsoft":
+                # one Microsoft account = one bot (the username is the email; don't mangle it with an index)
+                count = 1
+                accounts = [{"auth": "microsoft", "username": user}]
+            else:
+                accounts = [{"auth": "offline", "username": user + (str(i + 1) if count > 1 else "")} for i in range(count)]
             try:
                 radius = int(form.get("botRadius") or "256")
             except ValueError:
@@ -425,6 +444,7 @@ class BotManager:
             with self.log_lock:
                 self.log.clear()
                 self.log_total = 0
+            self.msa = None
             self._append("$ node scrape.js --config bot-config.json  (%d bot(s) -> 127.0.0.1:%d)" % (count, proxy_port))
             try:
                 self.proc = subprocess.Popen(
@@ -438,6 +458,7 @@ class BotManager:
 
     def stop(self):
         with self.lock:
+            self.msa = None
             if not self.is_running():
                 return False, "Bot is not running."
             self._append("=== stopping bot ===")
