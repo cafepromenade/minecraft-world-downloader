@@ -86,16 +86,26 @@ Full details + flags: `AGENTS.md` and `docs/wiki/Command-Line-Options.md`.
 
 ## 6. Open items / in progress
 
-- **1.12.2 instant disconnect on a specific online-mode server (under investigation).** Status:
-  - **Offline-mode 1.12.2 through the proxy is fully working** (verified end-to-end), so the proxy's
-    1.12.2 handling is fine.
-  - The reporter authenticates successfully (Microsoft) and then gets a clean, post-login disconnect on
-    their **online-mode** server → this is a **server-side** event, not a proxy parsing bug.
-  - To finish: capture the reason now logged by the proxy (`[disconnect] server kicked you in-game: …`
-    or `… server rejected the login: …`) or the client's disconnect screen, and confirm the **server's
-    version + whether it's behind BungeeCord/Velocity or uses ViaVersion**. A bare `SocketException`
-    (reset) with no kick line typically points to a proxy/network layer in front of the server, or Via
-    severing a 1.12.2 handshake. The disconnect-logging improvements to make this diagnosable are done.
+- **1.12.2 instant disconnect on a specific online-mode server (cause is server-side, not the proxy).**
+  Conclusion after a deep investigation against the author's upstream (`git fetch upstream` + diffs):
+  - **The proxy's 1.12.2 path is correct and equivalent to upstream's.** The handshake and login
+    (`Key`/EncryptionResponse) handlers are byte-identical to upstream; the pre-1.19 encryption/auth
+    flow is functionally identical (fork `EncryptionManager` deltas are 1.19+/1.20.6 branches, the
+    auto-open injector, and log text only). The fork's 1.12.2 (`317`) packet-table changes are additive
+    (container-slot capture, chat send, the `Disconnect` mapping) plus a correctness fix
+    (upstream mislabels serverbound `UseItem` → corrected to `UseItemOn` + `UseItem`).
+  - **The proxy cannot corrupt the connection:** it always forwards the *original* packet bytes
+    (handlers read a copy), per-packet handler exceptions are caught and the packet is still forwarded,
+    and **offline-mode 1.12.2 passes end-to-end** (same packet handling; online only adds encryption,
+    which is upstream-identical). So a fork "fix-by-revert" was deliberately **not** done — there is no
+    proxy regression to revert (the chosen direction was *fix the real cause, keep all features*).
+  - **Remaining (server-side) fix:** capture the reason the proxy now logs on join
+    (`[disconnect] server kicked you in-game: …`, `… server rejected the login: …`, or a benign
+    socket-close line) or the client's disconnect screen, and confirm the **server's real version +
+    whether it's behind BungeeCord/Velocity or uses ViaVersion**. A bare `SocketException` reset with no
+    kick line points to a proxy/network layer in front of the server or Via severing the 1.12.2
+    handshake — a server-side configuration, not a downloader bug. All the diagnostics to pinpoint it
+    are in place (`ProxyServer`, `EncryptionManager`, `ClientBound{Login,Game}PacketHandler`).
 - **BlueMap pin**: uses BlueMap **5.16** (last release that runs on Java 21; 5.17+ need Java 25).
 - **Voice proxy `CustomPayload`** is mapped for 1.20.6/1.21 only.
 - The three large ported features (skin-heads, modded colours, voice) are compile/regression-verified

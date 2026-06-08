@@ -112,4 +112,11 @@ There is nothing to invoke. Run the proxy as usual and connect your client to `l
 
 ## Open items
 
-None known.
+- **1.12.2 online-mode disconnect (server-side; tracked in `../../handoff.md`).** Investigated against
+  the author's upstream: the proxy's 1.12.2 handshake/login/encryption path is equivalent to upstream and
+  **offline 1.12.2 works end-to-end**, so the instant disconnect on a specific online-mode server is a
+  server-side event (likely a version mismatch, ViaVersion, or a BungeeCord/Velocity layer resetting the
+  connection) — not a downloader bug. The decision was to **fix the real cause and keep all features** (no
+  revert to upstream). These diagnostics exist precisely to capture the cause; the next step is reading
+  the on-join `[disconnect]` line / client disconnect screen and confirming the server version + any
+  fronting proxy / Via setup.
