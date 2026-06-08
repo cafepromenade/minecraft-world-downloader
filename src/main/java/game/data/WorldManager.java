@@ -11,9 +11,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -736,9 +738,26 @@ public class WorldManager {
         PacketInjector injector = Config.getPacketInjector();
         Set<Coordinate2D> loaded = new HashSet<>();
 
-        int chunksSent = 0;
+        int pace = Config.extendedRenderPaceMs();
         Map<Coordinate2D, McaFile> loadedFiles = new HashMap<>();
-        for (Coordinate2D coords : desired) {
+
+        // Send the chunks closest to the player first so their immediate surroundings fill in before
+        // distant ones — paired with the steady pace above, this avoids the "pop-in" / choppy feel.
+        List<Coordinate2D> ordered = new ArrayList<>(desired);
+        try {
+            Coordinate3D p = getPlayerPosition();
+            if (p != null) {
+                int pcx = p.getX() >> 4, pcz = p.getZ() >> 4;
+                ordered.sort(java.util.Comparator.comparingLong((Coordinate2D c) -> {
+                    long dx = c.getX() - pcx, dz = c.getZ() - pcz;
+                    return dx * dx + dz * dz;
+                }));
+            }
+        } catch (Exception ignored) {
+            // fall back to the unsorted order
+        }
+
+        for (Coordinate2D coords : ordered) {
             // since there is delay in this loop, it's possible some of the chunks were sent to the client by the time
             // we get to them.
             if (!this.renderDistanceExtender.isStillNeeded(coords)) {
@@ -774,7 +793,6 @@ public class WorldManager {
                     injector.enqueuePacket(light);
                 }
                 injector.enqueuePacket(chunkData);
-                chunksSent++;
 
             } catch (IncompleteChunkException ex) {
                 ex.printStackTrace();
@@ -787,10 +805,10 @@ public class WorldManager {
                 GuiManager.setChunkState(coords, ChunkImageState.EXTENDED);
             }
 
-            // periodically sleep so the client doesn't stutter from receiving too many chunks
-            chunksSent = (chunksSent + 1) % 5;
-            if (chunksSent == 0) {
-                attempt(() -> Thread.sleep(48));
+            // Drip the chunks out at a steady pace instead of in bursts, so the client renders them
+            // smoothly (bursts of many chunks at once, then a long gap, is what feels choppy).
+            if (pace > 0) {
+                attempt(() -> Thread.sleep(pace));
             }
         }
         return loaded;

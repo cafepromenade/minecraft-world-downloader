@@ -383,6 +383,12 @@ public class Config {
             usage = "When set, send downloaded chunks to client to extend render distance to given amount.")
     public int extendedRenderDistance = 0;
 
+    @Option(name = "--extended-render-pace",
+            usage = "Milliseconds to pause between each re-sent chunk when extending render distance. "
+                    + "Lower = chunks appear faster but can stutter; higher = smoother but slower to fill "
+                    + "in. Default 6 (steady drip; 0 = send as fast as possible).")
+    public int extendedRenderPaceMs = 6;
+
     @Option(name = "--seed",
             usage = "Numeric level seed for output world.")
     public long levelSeed = 0;
@@ -563,6 +569,11 @@ public class Config {
     // getters
     public static int getExtendedRenderDistance() {
         return instance.extendedRenderDistance;
+    }
+
+    /** Milliseconds to pause between each re-sent extended chunk (smooths delivery; 0 = no pause). */
+    public static int extendedRenderPaceMs() {
+        return Math.max(0, instance.extendedRenderPaceMs);
     }
 
     public static long getLevelSeed() {

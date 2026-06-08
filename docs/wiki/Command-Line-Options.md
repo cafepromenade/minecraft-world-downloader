@@ -31,6 +31,7 @@ java -jar world-downloader.jar --no-gui -s mc.example.com -o my_world -r 10
 | Flag | Alias | Default | Description |
 | ---- | ----- | ------- | ----------- |
 | `--extended-render-distance` | `-r` | `0` | Re-send downloaded chunks to the client to extend render distance. |
+| `--extended-render-pace` | | `6` | Milliseconds between each re-sent chunk. Lower = faster but choppier; higher = smoother. `0` = as fast as possible. |
 | `--render-players` | | off | Show other players on the overview map. |
 | `--mark-new-chunks` | | off | Outline newly downloaded chunks in orange. |
 | `--mark-old-chunks` | | on | Grey out old chunks on the map. |

@@ -104,6 +104,10 @@ OPTIONS = [
     ("Render distance & map", "extendedRenderDistance", "--extended-render-distance", "int", "0",
      "Extended render distance",
      "Send downloaded chunks back to the client to extend render distance (0 = off)."),
+    ("Render distance & map", "extendedRenderPace", "--extended-render-pace", "int", "6",
+     "Extended render pace (ms)",
+     "Pause between each re-sent chunk when extending render distance. Lower = faster but choppier; "
+     "higher = smoother but slower to fill in (default 6, 0 = as fast as possible)."),
     ("Render distance & map", "renderOtherPlayers", "--render-players", "bool", False, "Render players",
      "Show other players on the overview map."),
     ("Render distance & map", "markNewChunks", "--mark-new-chunks", "bool", False, "Mark new chunks",
