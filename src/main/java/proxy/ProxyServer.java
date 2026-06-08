@@ -88,9 +88,12 @@ public class ProxyServer extends Thread {
                         while ((bytesRead = streamFromClient.read(request)) != -1) {
                             onServerBoundPacket.pushData(request, bytesRead);
                         }
+                        // clean EOF: the client's stream to us was closed normally
+                        System.out.println("[disconnect] client closed the connection. Waiting for new connection...");
                     } catch (Throwable ex) {
+                        // this thread reads FROM the client, so an error here is the CLIENT side dropping
+                        System.out.println("[disconnect] client connection error: " + ex + " — waiting for new connection...");
                         ex.printStackTrace();
-                        System.out.println("Server probably disconnected. Waiting for new connection...");
                         connectionManager.reset();
                     }
                     // the client closed the connection to us, so close our connection to the server.
@@ -105,9 +108,12 @@ public class ProxyServer extends Thread {
                     while ((bytesRead = streamFromServer.read(reply)) != -1) {
                         onClientBoundPacket.pushData(reply, bytesRead);
                     }
+                    // clean EOF: the server closed its stream to us (often right after a kick / Disconnect)
+                    System.out.println("[disconnect] server closed the connection. Waiting for new connection...");
                 } catch (Throwable ex) {
+                    // this thread reads FROM the server, so an error here is the SERVER side dropping
+                    System.out.println("[disconnect] server connection error: " + ex + " — waiting for new connection...");
                     ex.printStackTrace();
-                    System.out.println("Client probably disconnected. Waiting for new connection...");
                     connectionManager.reset();
                 }
 

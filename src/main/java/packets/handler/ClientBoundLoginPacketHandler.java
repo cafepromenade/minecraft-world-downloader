@@ -16,7 +16,11 @@ public class ClientBoundLoginPacketHandler extends PacketHandler {
 
         operations.put("LoginDisconnect", provider -> {
             String reason = provider.readString();
-            System.out.println("Disconnect: " + reason);
+            // The server refused the login (the usual cause of an "instantly disconnected" connection,
+            // e.g. wrong version, not whitelisted, online-mode auth, anti-bot plugin). Show readable
+            // text plus the raw chat component for debugging.
+            System.out.println("[disconnect] server rejected the login: " + chatText(reason));
+            System.out.println("[disconnect] raw reason: " + reason);
             return true;
         });
 
@@ -54,6 +58,21 @@ public class ClientBoundLoginPacketHandler extends PacketHandler {
             return true;
         });
 
+    }
+
+    /** Best-effort readable text from a chat-component JSON (concatenates all "text" fields); falls back to the raw string. */
+    private static String chatText(String json) {
+        if (json == null) { return ""; }
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("\"text\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(json);
+            StringBuilder sb = new StringBuilder();
+            while (m.find()) { sb.append(m.group(1)); }
+            String t = sb.toString().replace("\\n", " ").trim();
+            return t.isEmpty() ? json : t;
+        } catch (Exception e) {
+            return json;
+        }
     }
 
     @Override
