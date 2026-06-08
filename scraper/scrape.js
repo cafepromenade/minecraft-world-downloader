@@ -170,15 +170,16 @@ function botOptionsFor(cfg, account, index) {
   if (cfg.version) opts.version = cfg.version;
 
   if (account.auth === 'microsoft') {
-    if (!prismarineAuth) {
-      throw new Error('Microsoft login requested but prismarine-auth is not installed (npm i prismarine-auth)');
-    }
     opts.auth = 'microsoft';
-    // username is the MS email or a stable id; cache profiles per-account to avoid re-login.
+    // username should be the Microsoft account email; it's also the cache key. Tokens are cached in
+    // profilesFolder so only the FIRST run is interactive (device-code flow); later runs are silent.
     opts.profilesFolder = account.cacheDir || path.join(process.cwd(), '.minecraft-auth', String(account.username || index));
     fs.mkdirSync(opts.profilesFolder, { recursive: true });
     opts.onMsaCode = (data) => {
-      console.log(`[bot${index + 1}] Microsoft login: open ${data.verification_uri} and enter code ${data.user_code}`);
+      // data = { user_code, verification_uri, message, ... }. message already includes a microsoft.com/link shortcut.
+      console.log(`[bot${index + 1}] ===== MICROSOFT SIGN-IN REQUIRED =====`);
+      console.log(`[bot${index + 1}] ${data.message || ('Open ' + data.verification_uri + ' and enter code ' + data.user_code)}`);
+      console.log(`[bot${index + 1}] (code ${data.user_code} at ${data.verification_uri || 'https://microsoft.com/link'}) — this is only needed once; the token is then cached.`);
     };
   } else {
     opts.auth = 'offline';
