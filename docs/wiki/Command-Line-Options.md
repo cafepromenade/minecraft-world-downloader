@@ -49,9 +49,10 @@ Automatically open nearby containers (one at a time, rate-limited) to record the
 | Flag | Default | Description |
 | ---- | ------- | ----------- |
 | `--auto-open-containers` | off | Enable the auto-open sweep. |
-| `--auto-open-reach` | `4.0` | Max distance (blocks) to a container; keep at/below survival reach. |
+| `--auto-open-reach` | `4.0` (fixed) | **Ignored.** Reach is fixed at the survival reach (4.0); the flag is accepted but does nothing. |
 | `--auto-open-delay` | `400` | Minimum milliseconds between opens. Higher = safer. |
 | `--auto-open-gamemodes` | `all` | Gamemodes the sweep runs in: `all`, or a comma list of `survival,creative,adventure,spectator`. |
+| `--auto-open-allow-trapped-chests` | off | Trapped chests are **not** auto-opened by default (opening one emits a redstone pulse that can trip contraptions/alarms); pass this to auto-open them too. |
 | `--auto-open-allow-chest-near-players` | off | By default chests/trapped chests/barrels/shulkers are **not** opened while another player is within the radius below; pass this to open them anyway. |
 | `--auto-open-player-radius` | `100` | Radius (blocks) for the "another player nearby" check. |
 | `--auto-open-log` | — | File for a human-readable list of captured items (blank = `auto-open-items.log` beside the world). |

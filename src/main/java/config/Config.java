@@ -488,6 +488,13 @@ public class Config {
                     + "activates once that gamemode is observed (e.g. after switching into spectator).")
     public String autoOpenGamemodes = "all";
 
+    @Option(name = "--auto-open-allow-trapped-chests",
+            usage = "By default the auto-open sweep SKIPS trapped chests entirely: opening one emits a "
+                    + "redstone pulse that can trigger contraptions or alarms on a server. Pass this flag to "
+                    + "auto-open trapped chests as well (they are still protected by the 'player nearby' "
+                    + "check like normal chests).")
+    public boolean autoOpenAllowTrappedChests = false;
+
     @Option(name = "--container-message-format",
             usage = "Template for the saved-container action-bar message (not hardcoded). Placeholders: "
                     + "{type} = block type (e.g. chest), {count} = slots with items, {x} {y} {z} = block "
@@ -645,6 +652,9 @@ public class Config {
 
     /** Whether to skip auto-opening chests/trapped chests/barrels/shulker boxes while another player is nearby (default true). */
     public static boolean autoOpenSkipChestNearPlayers() { return !instance.autoOpenAllowChestNearPlayers; }
+
+    /** Whether to auto-open trapped chests. Off by default (opening one emits a redstone pulse). */
+    public static boolean autoOpenAllowTrappedChests() { return instance.autoOpenAllowTrappedChests; }
 
     public static double autoOpenPlayerRadius() { return instance.autoOpenPlayerRadius; }
 

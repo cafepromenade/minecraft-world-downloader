@@ -32,9 +32,10 @@ an auto-explore bot.
 - **Download + save**: chunks, block entities, entities (incl. chest/hopper **minecart** containers),
   per-version `.mca` writing; 1.20.5+ item-NBT fix (`count` int) so saved containers aren't empty.
 - **Auto-open container sweep** (`--auto-open-containers`): opens nearby containers (every block type +
-  crafters + container minecarts), logs captured items, with a **player-proximity safety** that won't
-  open chests / trapped chests / barrels / shulker boxes while another player is within
-  `--auto-open-player-radius` (default 100).
+  crafters + container minecarts), logs captured items. Safety: **trapped chests are skipped by
+  default** (opening one emits a redstone pulse; opt in with `--auto-open-allow-trapped-chests`), and a
+  **player-proximity safety** won't open chests / trapped chests / barrels / shulker boxes while another
+  player is within `--auto-open-player-radius` (default 100). Reach is fixed at 4.0.
 - **Chat auto-reply** (`--auto-reply`): replies with a message's reply-coloured text when its
   trigger-coloured text matches (any colours; legacy + signed chat).
 - **Live overview map**: renders **headless** (no JavaFX) to PNG region tiles under `<world>/overview`,

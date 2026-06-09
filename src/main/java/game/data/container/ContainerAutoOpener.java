@@ -96,6 +96,22 @@ public class ContainerAutoOpener {
                 .isPlayerNear(pos, Config.autoOpenPlayerRadius());
     }
 
+    /**
+     * Whether opening this position must be skipped because it is a trapped chest and trapped-chest
+     * auto-opening is not enabled. Opening a trapped chest emits a redstone pulse, which can fire
+     * redstone contraptions or alarms on a server, so it is skipped by DEFAULT (opt in with
+     * --auto-open-allow-trapped-chests). Like the player-nearby check, the block is NOT marked
+     * attempted, so it will be opened later if the option is turned on.
+     */
+    private boolean trappedChestSkipped(Coordinate3D pos) {
+        if (Config.autoOpenAllowTrappedChests()) {
+            return false;
+        }
+        game.data.chunk.palette.BlockState bs = WorldManager.getInstance().blockStateAt(pos);
+        String name = bs == null ? null : bs.getName();
+        return "minecraft:trapped_chest".equals(name);
+    }
+
     public static boolean isOpenable(String blockName) {
         return blockName != null && (OPENABLE.contains(blockName) || blockName.endsWith("_shulker_box"));
     }
@@ -212,7 +228,7 @@ public class ContainerAutoOpener {
 
         Coordinate3D target = WorldManager.getInstance()
                 .findOpenableContainerNear(playerPos, Config.autoOpenReach(),
-                        pos -> attempted.contains(keyOf(pos)) || blockedByNearbyPlayer(pos));
+                        pos -> attempted.contains(keyOf(pos)) || trappedChestSkipped(pos) || blockedByNearbyPlayer(pos));
         if (target == null) {
             // No block container in reach; try a container minecart (chest/hopper minecart entity).
             game.data.entity.specific.ContainerMinecart mc = WorldManager.getInstance().getEntityRegistry()

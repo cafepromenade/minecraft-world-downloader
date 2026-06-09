@@ -143,6 +143,10 @@ OPTIONS = [
      "Minimum milliseconds between auto-opened containers (default 400). Higher = safer."),
     ("Auto-open containers", "autoOpenGamemodes", "--auto-open-gamemodes", "text", "all", "Gamemodes",
      "Which gamemodes the sweep runs in: 'all', or a comma list of survival,creative,adventure,spectator."),
+    ("Auto-open containers", "autoOpenAllowTrappedChests", "--auto-open-allow-trapped-chests", "bool", False,
+     "Open trapped chests", "Trapped chests are NOT auto-opened by default — opening one emits a redstone "
+     "pulse that can trigger contraptions or alarms. Enable to auto-open them too (still skipped while a "
+     "player is nearby)."),
     ("Auto-open containers", "autoOpenAllowChestNearPlayers", "--auto-open-allow-chest-near-players", "bool", False,
      "Open chests near players", "By default chests/trapped chests/barrels/shulkers are NOT opened while "
      "another player is within the radius below. Enable to open them anyway."),
