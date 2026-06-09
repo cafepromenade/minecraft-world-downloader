@@ -59,9 +59,24 @@ first on a fresh chain.
 
 ## Versions
 
-| Version | Protocol | Core download | Auto-open (real chests) | Chat reply | Load-back | Notes |
-|---------|----------|---------------|-------------------------|------------|-----------|-------|
-| _populated by the version sweep_ | | | | | | |
+Docker download sweep (downloader container ← version-matched Paper; bot pinned to the server version):
+
+| Version | Protocol | Core download (Docker) | Load-back / playable | BlueMap | Notes |
+|---------|----------|------------------------|----------------------|---------|-------|
+| 1.20.4 | 765 | ✅ (4 regions) | — | — | older chunk format |
+| 1.21.8 | 772 | ✅ (4 regions) | ✅ joins + spawns; ✅ after `--forceUpgrade` | ✅ 97 tiles + web-app | full validation target |
+| 1.21.11 | 774 | ✅ (4 regions) | — | — | newest local Paper |
+| 1.12.2 | 340 | ✅ (prior `runtest.js`) | ✅ (prior load-back) | n/a (<1.18) | real chest auto-open + chat reply logged (`auto-open-items-1.12.2.log`) |
+
+> Protocols are auto-detected from the bot handshake (765 / 772 / 774 here) and the matching per-version
+> packet handlers selected. Note: mineflayer's *auto*-detect through the proxy reports the newest 1.21.x
+> it knows (774); the bot is therefore pinned to the actual server version in this harness.
+>
+> **1.8 → 26.1.2 coverage:** the four versions above span the major chunk/protocol breakpoints the
+> downloader cares about (pre-1.18 vs 1.18+ sections, 1.20.2 configuration phase, 1.21.5 paletted-length
+> change). **1.8.x** would run on Java 8 (not exercised in this Docker run); **26.1.x** is bleeding-edge —
+> joining it needs **ViaProxy** + a 26.x client/server, which aren't available in this environment, so
+> that path is documented rather than executed here.
 
 ## World validation / BlueMap / upgrade
 
