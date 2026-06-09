@@ -4,8 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="264.0" prefWidth="590.0" stylesheets="/ui/dark.css" xmlns="http://javafx.com/javafx/1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GuiSettings">
-    <TabPane fx:id="tabPane" prefHeight="264.0" prefWidth="590.0" tabClosingPolicy="UNAVAILABLE">
+<AnchorPane prefHeight="264.0" prefWidth="760.0" stylesheets="/ui/dark.css" xmlns="http://javafx.com/javafx/1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GuiSettings">
+    <TabPane fx:id="tabPane" prefHeight="264.0" prefWidth="760.0" tabClosingPolicy="UNAVAILABLE">
         <Tab text="Connection">
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="215.0" prefWidth="620.0">
                 <GridPane layoutX="19.0" layoutY="35.0" prefHeight="108.0" prefWidth="574.0">
@@ -189,6 +189,162 @@
                             <IntField fx:id="centerZ" prefWidth="50.0" GridPane.columnIndex="1" />
                         </GridPane>
                     </GridPane>
+                </GridPane>
+            </AnchorPane>
+        </Tab>
+        <Tab fx:id="autoOpenTab" text="Auto-open">
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="220.0" prefWidth="700.0">
+                <GridPane layoutX="14.0" layoutY="8.0" prefWidth="660.0">
+                    <columnConstraints>
+                        <ColumnConstraints prefWidth="185.0" />
+                        <ColumnConstraints prefWidth="160.0" />
+                        <ColumnConstraints prefWidth="155.0" />
+                        <ColumnConstraints prefWidth="160.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                    </rowConstraints>
+                    <Label text="Auto-open containers">
+                        <tooltip>
+                            <QuickTooltip text="EXPERIMENTAL: automatically open nearby containers (one at a time, rate-limited) to record their contents as you move. May trip server anti-cheat." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="autoOpenContainers" GridPane.columnIndex="1" />
+                    <Label text="Open trapped chests" GridPane.columnIndex="2">
+                        <tooltip>
+                            <QuickTooltip text="Off by default: opening a trapped chest emits a redstone pulse that can trigger contraptions or alarms." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="autoOpenAllowTrappedChests" GridPane.columnIndex="3" />
+
+                    <Label text="Delay (ms)" GridPane.rowIndex="1">
+                        <tooltip>
+                            <QuickTooltip text="Minimum milliseconds between auto-opened containers (default 400). Higher = safer." />
+                        </tooltip>
+                    </Label>
+                    <IntField fx:id="autoOpenDelay" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    <Label text="Gamemodes" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                        <tooltip>
+                            <QuickTooltip text="Which gamemodes the sweep runs in: 'all', or a comma list of survival,creative,adventure,spectator." />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="autoOpenGamemodes" prefWidth="140.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+
+                    <Label text="Open chests near players" GridPane.rowIndex="2">
+                        <tooltip>
+                            <QuickTooltip text="By default chests/trapped chests/barrels/shulkers are NOT opened while another player is within the radius. Enable to open them anyway." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="autoOpenAllowChestNearPlayers" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                    <Label text="Player radius (blocks)" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                        <tooltip>
+                            <QuickTooltip text="Radius for the 'another player nearby' check that protects chests/barrels/shulkers (default 100)." />
+                        </tooltip>
+                    </Label>
+                    <IntField fx:id="autoOpenPlayerRadius" prefWidth="120.0" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+
+                    <Label text="Item log file" GridPane.rowIndex="3">
+                        <tooltip>
+                            <QuickTooltip text="File to append a human-readable list of captured items. Blank = 'auto-open-items.log' beside the world folder." />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="autoOpenLogFile" promptText="(default: beside the world folder)" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="3" />
+
+                    <Label text="State file" GridPane.rowIndex="4">
+                        <tooltip>
+                            <QuickTooltip text="File recording which containers were already opened so none is re-opened. Blank = 'auto-open-attempted.txt' beside the world folder." />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="autoOpenStateFile" promptText="(default: beside the world folder)" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="4" />
+
+                    <Label text="Message format" GridPane.rowIndex="5">
+                        <tooltip>
+                            <QuickTooltip text="Template for the saved-container action-bar message. Placeholders: {type} {count} {x} {y} {z}" />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="containerMessageFormat" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="5" />
+                </GridPane>
+            </AnchorPane>
+        </Tab>
+        <Tab fx:id="extrasTab" text="Extras">
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="700.0">
+                <GridPane layoutX="14.0" layoutY="8.0" prefWidth="660.0">
+                    <columnConstraints>
+                        <ColumnConstraints prefWidth="185.0" />
+                        <ColumnConstraints prefWidth="160.0" />
+                        <ColumnConstraints prefWidth="155.0" />
+                        <ColumnConstraints prefWidth="160.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
+                    </rowConstraints>
+                    <Label text="Chat auto-reply">
+                        <tooltip>
+                            <QuickTooltip text="EXPERIMENTAL: when an incoming message's trigger-coloured text matches the trigger, send that message's reply-coloured text back as real chat." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="autoReply" GridPane.columnIndex="1" />
+                    <Label text="Reply delay (ms)" GridPane.columnIndex="2">
+                        <tooltip>
+                            <QuickTooltip text="Minimum milliseconds between auto-replies (default 1500), to avoid chat spam / kicks." />
+                        </tooltip>
+                    </Label>
+                    <IntField fx:id="autoReplyDelay" prefWidth="120.0" GridPane.columnIndex="3" />
+
+                    <Label text="Trigger text" GridPane.rowIndex="1">
+                        <tooltip>
+                            <QuickTooltip text="Exact text that triggers a reply (required for auto-reply)." />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="autoReplyTrigger" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+
+                    <Label text="Trigger colour" GridPane.rowIndex="2">
+                        <tooltip>
+                            <QuickTooltip text="Minecraft colour name of the text that must match the trigger (default yellow)." />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="autoReplyTriggerColor" prefWidth="140.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                    <Label text="Reply colour" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                        <tooltip>
+                            <QuickTooltip text="Minecraft colour name of the text that is sent back as the reply (default red)." />
+                        </tooltip>
+                    </Label>
+                    <TextField fx:id="autoReplyColor" prefWidth="140.0" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+
+                    <Label text="Render pace (ms)" GridPane.rowIndex="3">
+                        <tooltip>
+                            <QuickTooltip text="Pause between each re-sent chunk when extending render distance. Lower = faster but choppier; higher = smoother (default 6)." />
+                        </tooltip>
+                    </Label>
+                    <IntField fx:id="extendedRenderPace" prefWidth="120.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                    <Label text="Voice-chat proxy" GridPane.columnIndex="2" GridPane.rowIndex="3">
+                        <tooltip>
+                            <QuickTooltip text="Proxy Simple Voice Chat / PlasmoVoice UDP through the downloader so voice works while connected via the proxy." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="enableVoiceProxy" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+
+                    <Label text="Colour modded blocks" GridPane.rowIndex="4">
+                        <tooltip>
+                            <QuickTooltip text="Colour modded (non-vanilla) blocks on the map using colours derived from mod JARs (on by default)." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="moddedBlockColorsBox" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                    <Label text="Write web-map tiles" GridPane.columnIndex="2" GridPane.rowIndex="4">
+                        <tooltip>
+                            <QuickTooltip text="Also render the overview map to PNG tiles on disk (the live map used by the web console), in addition to the GUI map." />
+                        </tooltip>
+                    </Label>
+                    <CheckBox fx:id="writeMapTiles" GridPane.columnIndex="3" GridPane.rowIndex="4" />
                 </GridPane>
             </AnchorPane>
         </Tab>

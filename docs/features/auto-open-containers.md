@@ -68,6 +68,10 @@ Player-aware safety (`blockedByNearbyPlayer`): only `chest`, `trapped_chest`, `b
 
 ## Configuration / flags
 
+All options are also configurable in the **jar GUI** (JavaFX settings → **Auto-open** tab, fields bound
+in `gui/GuiSettings.java`) and the web console, not just the CLI. GUI changes save on tab switch and
+apply live, since the sweep reads `Config` getters continuously.
+
 All flags are defined in `Config.java` (args4j `@Option`):
 
 - `--auto-open-containers` (default off) — master switch; enables the experimental sweep.

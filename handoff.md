@@ -54,6 +54,11 @@ an auto-explore bot.
 - **Accessibility & themes**: web console ♿ menu (dark/light/high-contrast; ADHD-focus / calm /
   easy-reading / low-vision presets; reduced motion; dyslexia font; text scaling; skip links) and
   desktop themes + large-text.
+- **Jar GUI parity**: the JavaFX settings window has **Auto-open** and **Extras** tabs exposing the
+  fork's features (auto-open suite incl. trapped-chest/player-radius safety + log/state paths, chat
+  auto-reply, extended-render pace, voice proxy, modded block colours, web-map tile writing) — so every
+  feature is configurable from the jar GUI, web console, and desktop manager alike. Settings save on
+  tab switch and apply live (the sweep/reply/pace read `Config` continuously).
 - **Disconnect diagnostics**: `[disconnect] …` logs for login kicks, in-game kicks, and socket closes;
   online-mode auth failures explain themselves; routine socket closes are logged calmly.
 

@@ -32,7 +32,10 @@
     -fx-background-color: #161b22;
 }
 .tab-pane {
-    -fx-tab-min-width: 96px;
+    /* JavaFX clamps the LABEL to tab-min-width and then adds the .tab padding, so each tab's real
+       floor is min-width + horizontal padding. Keep both small enough that all 8 tabs (incl.
+       Auto-open/Extras and the error tab) fit in the 760px window without scroll arrows. */
+    -fx-tab-min-width: 60px;
     -fx-tab-min-height: 32px;
     -fx-tab-max-height: 32px;
     -fx-padding: 0;
@@ -41,7 +44,7 @@
     -fx-background-color: transparent;
     -fx-background-radius: 8 8 0 0;
     -fx-cursor: hand;
-    -fx-padding: 4px 14px;
+    -fx-padding: 4px 10px;
     -fx-border-color: transparent;
     -fx-border-width: 0 0 3 0;
 }

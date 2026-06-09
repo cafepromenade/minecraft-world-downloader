@@ -55,6 +55,9 @@ The single `AutoChatReply` instance is lazily created and held by `WorldManager`
 
 ## Configuration / flags
 
+All options are also configurable in the **jar GUI** (JavaFX settings → **Extras** tab, bound in
+`gui/GuiSettings.java`) and the web console, not just the CLI.
+
 All flags are defined in `Config.java`:
 
 - `--auto-reply` (boolean, default `false`) — master opt-in switch. EXPERIMENTAL. When an incoming chat message's trigger-coloured text matches `--auto-reply-trigger`, send that message's reply-coloured text back to the server. Sends real chat; servers enforcing secure chat may reject it.

@@ -656,7 +656,12 @@ public class Config {
     /** Whether to auto-open trapped chests. Off by default (opening one emits a redstone pulse). */
     public static boolean autoOpenAllowTrappedChests() { return instance.autoOpenAllowTrappedChests; }
 
-    public static double autoOpenPlayerRadius() { return instance.autoOpenPlayerRadius; }
+    /** Radius for the 'another player nearby' chest protection. A non-positive value (e.g. a cleared
+     *  GUI field committed on tab switch) would silently disable the protection, so fall back to the
+     *  default 100 instead — turning the protection off has its own explicit flag. */
+    public static double autoOpenPlayerRadius() {
+        return instance.autoOpenPlayerRadius > 0 ? instance.autoOpenPlayerRadius : 100.0;
+    }
 
     /**
      * Allowed gamemodes for the auto-open sweep, or null for "all gamemodes" (no gate).

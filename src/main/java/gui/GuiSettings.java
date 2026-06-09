@@ -76,6 +76,30 @@ public class GuiSettings {
     public CheckBox enableCaveRenderMode;
     public Label authResult;
 
+    // auto-open tab
+    public Tab autoOpenTab;
+    public CheckBox autoOpenContainers;
+    public IntField autoOpenDelay;
+    public TextField autoOpenGamemodes;
+    public CheckBox autoOpenAllowTrappedChests;
+    public CheckBox autoOpenAllowChestNearPlayers;
+    public IntField autoOpenPlayerRadius;
+    public TextField autoOpenLogFile;
+    public TextField autoOpenStateFile;
+    public TextField containerMessageFormat;
+
+    // extras tab
+    public Tab extrasTab;
+    public CheckBox autoReply;
+    public IntField autoReplyDelay;
+    public TextField autoReplyTrigger;
+    public TextField autoReplyTriggerColor;
+    public TextField autoReplyColor;
+    public IntField extendedRenderPace;
+    public CheckBox enableVoiceProxy;
+    public CheckBox moddedBlockColorsBox;
+    public CheckBox writeMapTiles;
+
 
 
 
@@ -100,7 +124,9 @@ public class GuiSettings {
 
         heights = Map.of(
             generalTab, 360,
-            realmsTab, 320
+            realmsTab, 320,
+            autoOpenTab, 420,
+            extrasTab, 390
         );
 
         // connection tab
@@ -124,26 +150,53 @@ public class GuiSettings {
         enableCaveRenderMode.setSelected(config.enableCaveRenderMode);
         enableDrawExtendedChunks.setSelected(config.drawExtendedChunks);
 
+        // auto-open tab
+        autoOpenContainers.setSelected(config.autoOpenContainers);
+        autoOpenDelay.setValue(config.autoOpenDelayMs);
+        autoOpenGamemodes.setText(config.autoOpenGamemodes);
+        autoOpenAllowTrappedChests.setSelected(config.autoOpenAllowTrappedChests);
+        autoOpenAllowChestNearPlayers.setSelected(config.autoOpenAllowChestNearPlayers);
+        autoOpenPlayerRadius.setValue((int) config.autoOpenPlayerRadius);
+        autoOpenLogFile.setText(config.autoOpenLogFile);
+        autoOpenStateFile.setText(config.autoOpenStateFile);
+        containerMessageFormat.setText(config.containerMessageFormat);
+
+        // extras tab
+        autoReply.setSelected(config.autoReply);
+        autoReplyDelay.setValue(config.autoReplyDelayMs);
+        autoReplyTrigger.setText(config.autoReplyTrigger);
+        autoReplyTriggerColor.setText(config.autoReplyTriggerColor);
+        autoReplyColor.setText(config.autoReplyColor);
+        extendedRenderPace.setValue(config.extendedRenderPaceMs);
+        enableVoiceProxy.setSelected(config.enableVoiceProxy);
+        moddedBlockColorsBox.setSelected(!config.disableModdedBlockColors);
+        writeMapTiles.setSelected(config.renderMap);
+
         // realms tab
         if (config.isStarted()) {
             tabPane.getTabs().remove(realmsTab);
-        } else {
-            tabPane.getSelectionModel().selectedItemProperty().addListener((e, oldVal, newVal) -> {
-                save();
+        }
+        // Register the tab-switch listener even while the proxy is running: per-tab window heights must
+        // still apply (the Auto-open tab is taller than the default), and save() on switch lets live
+        // settings (the auto-open sweep, chat reply, render pace read Config continuously) take effect
+        // mid-session. The realms/auth opened() hooks keep their original not-started-only behaviour.
+        tabPane.getSelectionModel().selectedItemProperty().addListener((e, oldVal, newVal) -> {
+            save();
+            if (!config.isStarted()) {
                 if (newVal == realmsTab) {
                     realmsController.opened(this);
                 }
                 if (newVal == authTab) {
                     authController.opened(this);
                 }
+            }
 
-                if (heights.containsKey(newVal)) {
-                    GuiManager.getStage().setHeight(heights.get(newVal));
-                } else {
-                    resetHeight();
-                }
-            });
-        }
+            if (heights.containsKey(newVal)) {
+                GuiManager.getStage().setHeight(heights.get(newVal));
+            } else {
+                resetHeight();
+            }
+        });
         disableWhenRunning(Arrays.asList(server, portLocal, centerX, centerZ, worldOutputDir));
 
         GuiManager.bindTooltip(portVerifyLabel, new Tooltip("Is the downloader already running?"));
@@ -326,7 +379,40 @@ public class GuiSettings {
         config.enableCaveRenderMode = enableCaveRenderMode.isSelected();
         config.drawExtendedChunks = enableDrawExtendedChunks.isSelected();
 
+        // auto-open tab (read live by the sweep, so changes apply even while running)
+        config.autoOpenContainers = autoOpenContainers.isSelected();
+        config.autoOpenDelayMs = Math.max(0, intOr(autoOpenDelay, config.autoOpenDelayMs));
+        config.autoOpenGamemodes = autoOpenGamemodes.getText();
+        config.autoOpenAllowTrappedChests = autoOpenAllowTrappedChests.isSelected();
+        config.autoOpenAllowChestNearPlayers = autoOpenAllowChestNearPlayers.isSelected();
+        config.autoOpenPlayerRadius = Math.max(0, intOr(autoOpenPlayerRadius, (int) config.autoOpenPlayerRadius));
+        config.autoOpenLogFile = autoOpenLogFile.getText();
+        config.autoOpenStateFile = autoOpenStateFile.getText();
+        config.containerMessageFormat = containerMessageFormat.getText();
+
+        // extras tab
+        config.autoReply = autoReply.isSelected();
+        config.autoReplyDelayMs = Math.max(0, intOr(autoReplyDelay, config.autoReplyDelayMs));
+        config.autoReplyTrigger = autoReplyTrigger.getText();
+        config.autoReplyTriggerColor = autoReplyTriggerColor.getText();
+        config.autoReplyColor = autoReplyColor.getText();
+        config.extendedRenderPaceMs = Math.max(0, intOr(extendedRenderPace, config.extendedRenderPaceMs));
+        config.enableVoiceProxy = enableVoiceProxy.isSelected();
+        config.disableModdedBlockColors = !moddedBlockColorsBox.isSelected();
+        config.renderMap = writeMapTiles.isSelected();
+
         Config.save();
+    }
+
+    /**
+     * Read an int field, keeping the previous value when the field is empty. save() fires on every tab
+     * switch (even mid-edit, and programmatically when the error tab appears), and getAsInt() returns 0
+     * for empty text — without this guard, clearing a field to retype it and switching tabs would
+     * silently commit 0 (e.g. zeroing the player-protection radius while the sweep is running).
+     */
+    private static int intOr(gui.components.IComponentNumberField field, int previous) {
+        String t = field.getRealText();
+        return (t == null || t.isEmpty()) ? previous : field.getAsInt();
     }
 
     public boolean portInUse(int port) {
