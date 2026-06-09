@@ -57,3 +57,7 @@ TEST_RESULTS.txt
 __pycache__/
 *.pyc
 desktop/publish-test/
+
+# transient GUI launch logs (local testing)
+gui.out
+gui.err
