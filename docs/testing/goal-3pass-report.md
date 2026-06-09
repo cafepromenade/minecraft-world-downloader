@@ -97,6 +97,20 @@ All performed on a **Docker-downloaded** world (the "everything-on" combo world,
 > `bluemap render`/`all` produces a viewable map in one call. Verified: one `render` call now yields
 > `index.html` + tiles. This also fixes the desktop manager's "Render 3D map" button (it calls `all`).
 
+## Auto-open — real chests (Docker, RCON-placed)
+
+Placed real containers next to spawn via RCON, ran the **dockerized** downloader with auto-open, and
+read the item log — the gold-standard test of the auto-open sweep **and** the new trapped-chest default:
+
+| Container (with items) | Default (`--auto-open-containers`) | With `--auto-open-allow-trapped-chests` |
+|------------------------|-------------------------------------|------------------------------------------|
+| `chest` (diamond×12, iron×34, emerald×5) | ✅ captured | ✅ captured |
+| `barrel` (coal×48) | ✅ captured | ✅ captured |
+| `trapped_chest` (gold×8, redstone×64) | **✅ correctly SKIPPED** (not opened) | ✅ captured |
+
+This confirms the safety default end-to-end: trapped chests are never auto-opened unless explicitly
+allowed. (Item contents matched exactly in the `auto-open-items.log`.)
+
 ## Interfaces
 
 | Interface | Test | Result |
