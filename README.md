@@ -124,6 +124,12 @@ Windows desktop manager (installer): [WorldDownloaderManager-Setup.exe](https://
 
 Latest cross-platform jar (command-line support): [world-downloader.jar](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/world-downloader.jar)
 
+**Sample downloaded worlds** (for 1.20.4 / 1.21.8 / 1.21.11 / 1.12.2, plus a BlueMap render) are
+published on the [`test-worlds`](https://github.com/cafepromenade/minecraft-world-downloader/releases/tag/test-worlds)
+release — produced end-to-end through the dockerized downloader. See
+[`docs/testing/goal-3pass-report.md`](docs/testing/goal-3pass-report.md) for the full 3-pass Docker
+feature test (all features + combinations, world load-back, BlueMap, upgrade-playability).
+
 ### Basic usage
 [Download](https://github.com/cafepromenade/minecraft-world-downloader/releases/latest/download/WorldDownloaderManager-Setup.exe) the Windows desktop manager and run it. Enter the server address in the address field and press start.
 
