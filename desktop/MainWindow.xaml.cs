@@ -29,6 +29,10 @@ public partial class MainWindow : Window
         UserBox.Text = _settings.Username;
         PassBox.Password = _settings.Password;
         LoginPanel.Visibility = _settings.RequireLogin ? Visibility.Visible : Visibility.Collapsed;
+        BuildLocalCheck.IsChecked = _settings.BuildLocally;
+        BuildContextBox.Text = _settings.BuildContext;
+        BuildPanel.Visibility = _settings.BuildLocally ? Visibility.Visible : Visibility.Collapsed;
+        PullBtn.IsEnabled = !_settings.BuildLocally;
 
         Loaded += async (_, _) => await InitAsync();
     }
@@ -63,6 +67,8 @@ public partial class MainWindow : Window
         _settings.RequireLogin = LoginCheck.IsChecked == true;
         _settings.Username = UserBox.Text.Trim();
         _settings.Password = PassBox.Password;
+        _settings.BuildLocally = BuildLocalCheck.IsChecked == true;
+        _settings.BuildContext = BuildContextBox.Text.Trim();
         _settings.Save();
     }
 
@@ -95,7 +101,8 @@ public partial class MainWindow : Window
         Busy.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         StartBtn.IsEnabled = !on;
         StopBtn.IsEnabled = !on;
-        PullBtn.IsEnabled = !on;
+        // "Update image" pulls the prebuilt image — keep it disabled while busy and when building locally.
+        PullBtn.IsEnabled = !on && BuildLocalCheck.IsChecked != true;
         BrowseBtn.IsEnabled = !on;
     }
 
@@ -128,6 +135,51 @@ public partial class MainWindow : Window
     private void Login_Changed(object sender, RoutedEventArgs e) =>
         LoginPanel.Visibility = LoginCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
 
+    private void BuildLocal_Changed(object sender, RoutedEventArgs e)
+    {
+        bool on = BuildLocalCheck.IsChecked == true;
+        BuildPanel.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        // "Update image" pulls the prebuilt image, which doesn't apply when building locally.
+        PullBtn.IsEnabled = !on;
+    }
+
+    private void BrowseBuildContext_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Choose the source folder (contains the Dockerfile)" };
+        if (!string.IsNullOrWhiteSpace(BuildContextBox.Text) && Directory.Exists(BuildContextBox.Text))
+            dlg.InitialDirectory = BuildContextBox.Text;
+        if (dlg.ShowDialog() == true)
+            BuildContextBox.Text = dlg.FolderName;
+    }
+
+    /// <summary>Resolve a build context: the configured folder if it has a Dockerfile, else auto-detect
+    /// one near the app (so running from inside the repo just works). Returns null if none is found.</summary>
+    private string? FindBuildContext()
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.BuildContext))
+        {
+            try
+            {
+                var p = Path.GetFullPath(_settings.BuildContext);
+                if (File.Exists(Path.Combine(p, "Dockerfile"))) return p;
+            }
+            catch { /* fall through to auto-detect */ }
+        }
+        foreach (var c in new[]
+        {
+            AppContext.BaseDirectory,
+            Path.Combine(AppContext.BaseDirectory, ".."),
+            Path.Combine(AppContext.BaseDirectory, "..", ".."),
+            // dev layout: desktop/bin/Release/net8.0-windows/ -> repo root is four levels up
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."),
+        })
+        {
+            try { var f = Path.GetFullPath(c); if (File.Exists(Path.Combine(f, "Dockerfile"))) return f; }
+            catch { /* ignore */ }
+        }
+        return null;
+    }
+
     private async void Start_Click(object sender, RoutedEventArgs e)
     {
         SaveFromUi();
@@ -136,16 +188,45 @@ public partial class MainWindow : Window
             SetStatus("warn", "Pick a data folder first — choose where worlds should be stored.");
             return;
         }
+
+        // When building locally, resolve (and validate) the source folder up front.
+        string? buildContext = null;
+        if (_settings.BuildLocally)
+        {
+            buildContext = FindBuildContext();
+            if (buildContext == null)
+            {
+                SetStatus("error", "Build locally is on, but no Dockerfile was found. Set the source folder " +
+                                   "(the minecraft-world-downloader checkout that contains the Dockerfile).");
+                return;
+            }
+        }
+
         Busying(true);
         try
         {
             Directory.CreateDirectory(_settings.DataFolder);
             await _docker.RemoveAsync(_settings.ContainerName);
-            // Always pull the freshest published image before launching, so the web console / app is
-            // never stale. Non-fatal: if the pull fails (offline, or a local-only image) we fall back
-            // to whatever image is already cached and still try to run.
-            SetStatus("info", "Updating image (docker pull) — first run can take a while …");
-            await _docker.PullAsync(_settings.Image);
+
+            if (_settings.BuildLocally)
+            {
+                SetStatus("info", $"Building image locally from {buildContext} — the first build can take several minutes …");
+                var (bcode, _) = await _docker.BuildAsync(buildContext!, Settings.LocalImageTag);
+                if (bcode != 0)
+                {
+                    SetStatus("error", "Local build failed — see the output below.");
+                    return;
+                }
+            }
+            else
+            {
+                // Always pull the freshest published image before launching, so the web console / app is
+                // never stale. Non-fatal: if the pull fails (offline, or a local-only image) we fall back
+                // to whatever image is already cached and still try to run.
+                SetStatus("info", "Updating image (docker pull) — first run can take a while …");
+                await _docker.PullAsync(_settings.Image);
+            }
+
             var (code, _) = await _docker.RunContainerAsync(_settings);
             if (code == 0)
             {
@@ -154,7 +235,9 @@ public partial class MainWindow : Window
             }
             else
             {
-                SetStatus("error", "Failed to start — see the output below. If the image is missing, press “Update image” first.");
+                SetStatus("error", _settings.BuildLocally
+                    ? "Failed to start — see the output below."
+                    : "Failed to start — see the output below. If the image is missing, press “Update image” first.");
             }
         }
         finally

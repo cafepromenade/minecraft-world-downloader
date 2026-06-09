@@ -243,6 +243,34 @@
                                    Text="The Docker image that gets run. Leave the default unless you build/host your own; use “Update image” to fetch the newest version." />
                     </StackPanel>
 
+                    <!-- Build locally from source instead of pulling -->
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <CheckBox x:Name="BuildLocalCheck" Style="{StaticResource Toggle}" VerticalAlignment="Center"
+                                  Checked="BuildLocal_Changed" Unchecked="BuildLocal_Changed"
+                                  AutomationProperties.Name="Build the image locally from source"
+                                  ToolTip="Build the Docker image from source on this PC instead of pulling the prebuilt one." />
+                        <TextBlock Text="Build image locally from source" Foreground="{StaticResource Text}"
+                                   FontSize="13" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Desc}"
+                               Text="Builds the image from a local source checkout (which must contain the Dockerfile) instead of downloading it — useful offline, behind a firewall, or to run your own changes. The first build can take a few minutes." />
+                    <StackPanel x:Name="BuildPanel" Margin="0,12,0,0" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource Lbl}" Text="Source folder (contains the Dockerfile)" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="BuildContextBox" Style="{StaticResource Tb}"
+                                     ToolTip="Folder of the minecraft-world-downloader source (with the Dockerfile)." />
+                            <Button x:Name="BuildBrowseBtn" Grid.Column="1" Style="{StaticResource Btn}" Content="Browse…"
+                                    Margin="8,0,0,0" Click="BrowseBuildContext_Click"
+                                    AutomationProperties.Name="Browse for the source folder" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource Desc}"
+                                   Text="Leave blank to auto-detect when this app is run from inside the repo. Otherwise pick the folder containing the Dockerfile." />
+                    </StackPanel>
+
                     <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                         <CheckBox x:Name="LoginCheck" Style="{StaticResource Toggle}" VerticalAlignment="Center"
                                   Checked="Login_Changed" Unchecked="Login_Changed"

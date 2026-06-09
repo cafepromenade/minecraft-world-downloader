@@ -67,6 +67,10 @@ public class DockerService
     public Task<(int, string)> PullAsync(string image) =>
         RunAsync(new[] { "pull", image });
 
+    /// <summary>Build the image from a local source folder (the build context, which must contain a Dockerfile).</summary>
+    public Task<(int, string)> BuildAsync(string contextPath, string imageTag) =>
+        RunAsync(new[] { "build", "-t", imageTag, contextPath });
+
     public Task<(int, string)> RunContainerAsync(Settings s)
     {
         var args = new List<string>
@@ -83,7 +87,7 @@ public class DockerService
             args.Add("-e"); args.Add($"WEB_USERNAME={s.Username}");
             args.Add("-e"); args.Add($"WEB_PASSWORD={s.Password}");
         }
-        args.Add(s.Image);
+        args.Add(s.EffectiveImage);
         return RunAsync(args);
     }
 }
