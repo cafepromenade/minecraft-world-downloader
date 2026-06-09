@@ -85,6 +85,17 @@ public class ProxyServer extends Thread {
                     System.out.println("[dev] client connected from " + client.get().getRemoteSocketAddress());
                 }
 
+                // A new connection is starting: clear any state left over from the previous one. On a
+                // CLEAN disconnect (EOF on either side) the read loops below fall through WITHOUT calling
+                // reset() — only the error paths reset. Without this, the next connection inherits the
+                // dead session's compression/encryption-enabled flags, half-read reader queues and
+                // network mode, so the fresh (uncompressed, unencrypted) login/status gets misparsed: the
+                // client fails with "DataFormatException: incorrect header check" and rejoining — or even
+                // pinging the server from the list — hangs. Resetting here makes every connection start
+                // from a clean slate. (setStreamToClient/Server below re-bind the new streams; reset()
+                // does not touch them.)
+                connectionManager.reset();
+
                 final InputStream streamFromClient = client.get().getInputStream();
                 final OutputStream streamToClient = client.get().getOutputStream();
                 connectionManager.getEncryptionManager().setStreamToClient(streamToClient);
