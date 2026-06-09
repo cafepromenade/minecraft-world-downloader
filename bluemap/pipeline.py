@@ -275,8 +275,16 @@ def render(args):
         ])
 
     # 4) render
-    log("rendering (this downloads client textures on first run)...")
-    rc = subprocess.run([java, "-jar", jar, "-c", cfg_dir, "-r"], check=False)
+    # Force a FULL render the first time (with -r alone BlueMap only renders chunks changed since the
+    # last render — on a fresh webroot that's "0 changed", so it reports "up-to-date" and writes no
+    # tiles). Also always (re)generate the web-app (-g) so the map is actually viewable in a browser;
+    # without it there is no index.html. -e renders map edges on the initial full pass.
+    first_render = not os.path.isdir(os.path.join(webroot, "maps"))
+    cmd = [java, "-jar", jar, "-c", cfg_dir, "-r", "-g"]
+    if first_render:
+        cmd += ["-f", "-e"]
+    log("rendering%s (this downloads client textures on first run)..." % (" [full]" if first_render else ""))
+    rc = subprocess.run(cmd, check=False)
     if rc.returncode != 0 and not args.allow_nonzero:
         raise SystemExit(f"BlueMap render failed (exit {rc.returncode})")
     log(f"render complete -> {webroot}")
