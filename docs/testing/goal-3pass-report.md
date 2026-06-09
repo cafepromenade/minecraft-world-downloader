@@ -104,13 +104,18 @@ All performed on a **Docker-downloaded** world (the "everything-on" combo world,
 | **Web console** | start/stop/restart, offline auth, 16-config matrix, map endpoints, bot auth — all via the dockerized console API | ✅ exercised throughout the matrix |
 | **CLI (jar)** | `--help` lists all flags (incl. new `--auto-open-allow-trapped-chests`); unknown flag / missing `--server` print usage without crashing | ✅ |
 | **Desktop manager (C#)** | `dotnet build` clean; generated build-mode compose valid + `docker compose up -d --build` serves the console (HTTP 200) | ✅ (prior commit) |
-| **Jar GUI (JavaFX)** | _see Open items — GUI launch needs a display; improvements in progress_ | ⏳ |
+| **Jar GUI (JavaFX)** | builds into the shaded jar; **launches cleanly with the modernized dark theme** (no JavaFX CSS parse warnings) | ✅ |
 
 ## Open items
 
-- **Jar GUI (JavaFX) improvements** — in progress (separate from the proxy; needs a display to fully
-  exercise).
-- **Version sweep 1.8 → 26.1.2** — 1.21.8 fully covered here; the prior `runtest.js` harness covers
-  1.12.2 / 1.20.4 / 1.21.8 / 1.21.11 with real chest auto-open + chat reply + load-back. 1.8 and the
-  bleeding-edge 26.1.x (would need ViaProxy + a 26.x client/server, not available locally) are tracked.
-- **Publishing downloaded worlds to a GitHub release** — pending.
+- **Jar GUI (JavaFX)** — the dark theme was modernized to match the web console / desktop manager
+  (rounded corners, slate surfaces, green accent, dark inputs); verified it builds + launches with no
+  CSS warnings. A *pixel* screenshot via computer-use wasn't captured (a bare `java -jar` window isn't an
+  allowlistable app), and a deeper FXML/layout overhaul is a larger follow-up.
+- **Version sweep 1.8 → 26.1.2** — Docker-verified on **1.20.4 / 1.21.8 / 1.21.11** (+ 1.12.2 via the
+  prior `runtest.js` harness with real chest auto-open + chat reply + load-back). **1.8.x** runs on
+  Java 8 (not exercised in this Java-21 Docker run); **26.1.x** + **ViaProxy** need a 26.x client/server
+  not available locally — documented, not executed.
+- **Worlds published** — see the
+  [`test-worlds`](https://github.com/cafepromenade/minecraft-world-downloader/releases/tag/test-worlds)
+  release (1.20.4 / 1.21.8 / 1.21.11 / 1.12.2 + BlueMap render). ✅
