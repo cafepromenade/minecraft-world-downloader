@@ -201,6 +201,7 @@ public class GuiManager extends Application {
 
 
         Scene scene = new Scene(loader.load());
+        applyTheme(scene);
 
         if (name.equals("Settings")) {
             stage.setTitle(TITLE + " - Settings");
@@ -217,6 +218,42 @@ public class GuiManager extends Application {
         }
 
         return null;
+    }
+
+    /**
+     * Apply the configured GUI theme to a scene. The FXML always loads dark.css as its base; light and
+     * high-contrast are OVERRIDE stylesheets appended after it, so dark simply means "no override".
+     * The override must be added to the ROOT NODE's stylesheet list (where the FXML put dark.css):
+     * in JavaFX, a parent node's stylesheets outrank the Scene's, so a scene-level override would lose
+     * to the root-level dark.css regardless of order. Unknown values fall back to dark.
+     */
+    private static void applyTheme(Scene scene) {
+        String light = GuiManager.class.getResource("/ui/light.css").toExternalForm();
+        String contrast = GuiManager.class.getResource("/ui/contrast.css").toExternalForm();
+        var stylesheets = scene.getRoot().getStylesheets();
+        stylesheets.removeAll(light, contrast);
+
+        String theme = config == null || config.guiTheme == null ? "dark" : config.guiTheme;
+        if (theme.equalsIgnoreCase("light")) {
+            stylesheets.add(light);
+        } else if (theme.equalsIgnoreCase("contrast")) {
+            stylesheets.add(contrast);
+        }
+    }
+
+    /** Re-apply the configured theme to every open window (live theme switching from the settings). */
+    public static void reapplyTheme() {
+        if (instance == null) {
+            return;
+        }
+        Platform.runLater(() -> {
+            if (instance.stage != null && instance.stage.getScene() != null) {
+                applyTheme(instance.stage.getScene());
+            }
+            if (instance.settingsStage != null && instance.settingsStage.getScene() != null) {
+                applyTheme(instance.settingsStage.getScene());
+            }
+        });
     }
 
     public static boolean openWebLink(String text) {

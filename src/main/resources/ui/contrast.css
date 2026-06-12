@@ -1,0 +1,79 @@
+/* ============================================================================
+   World Downloader — high-contrast theme OVERRIDE (WCAG-leaning).
+   Loaded AFTER dark.css; black surfaces, white text/borders, bright accents.
+   Matches the web console / desktop manager high-contrast palettes.
+   ============================================================================ */
+.root {
+    -fx-background: #000000;
+    -fx-background-color: #000000;
+    -fx-accent: #00e676;
+    -fx-focus-color: #00e676;
+    -fx-faint-focus-color: #00e67644;
+    -fx-text-base-color: #ffffff;
+}
+
+.label { -fx-text-fill: #ffffff; }
+
+.tab-header-background { -fx-background-color: #000000; }
+.tab:hover { -fx-background-color: #141414; }
+.tab .tab-label { -fx-text-fill: #f0f0f0; }
+.tab:selected { -fx-border-color: #00e676; }
+.tab:selected .tab-label { -fx-text-fill: #00e676; }
+
+.text-input {
+    -fx-background-color: #000000;
+    -fx-border-color: #ffffff;
+    -fx-border-width: 2px;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #bdbdbd;
+    -fx-highlight-fill: #00e67688;
+}
+.text-input:focused { -fx-border-color: #00e676; }
+.field-nonempty:empty { -fx-border-color: #ff6b6b; }
+
+.button, .titled-pane > .title {
+    -fx-background-color: #00e676;
+    -fx-text-fill: #000000;
+    -fx-border-color: #ffffff;
+    -fx-border-width: 2px;
+}
+.button:hover { -fx-background-color: #4dffa1; }
+.button:pressed { -fx-background-color: #00c853; }
+
+.check-box { -fx-text-fill: #ffffff; }
+.check-box .box { -fx-background-color: #000000; -fx-border-color: #ffffff; -fx-border-width: 2px; }
+.check-box:selected .box { -fx-background-color: #00e676; -fx-border-color: #00e676; }
+.check-box:selected .mark { -fx-background-color: #000000; }
+
+.titled-pane { -fx-text-fill: #ffffff; }
+.titled-pane > .content { -fx-background-color: #000000; -fx-border-color: #ffffff; }
+
+.label-valid { -fx-text-fill: #00e676; }
+.label-warn  { -fx-text-fill: #ffd54f; }
+.label-err   { -fx-text-fill: #ff6b6b; }
+
+.slider > .axis { -fx-tick-label-fill: #f0f0f0; }
+.slider > .track { -fx-background-color: #ffffff; }
+.slider > .thumb { -fx-background-color: #00e676; }
+
+.combo-box, .choice-box { -fx-background-color: #000000; -fx-border-color: #ffffff; -fx-border-width: 2px; }
+.combo-box .list-cell, .choice-box .label { -fx-text-fill: #ffffff; }
+.combo-box-popup .list-view { -fx-background-color: #000000; -fx-border-color: #ffffff; }
+.combo-box-popup .list-cell:filled:hover { -fx-background-color: #141414; }
+
+.scroll-bar .thumb { -fx-background-color: #ffffff; }
+
+.tooltip {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #ffffff;
+}
+
+.link-subtle { -fx-text-fill: #f0f0f0; }
+
+.map-status-bar {
+    -fx-background-color: rgba(0, 0, 0, 0.92);
+    -fx-border-color: #ffffff transparent transparent transparent;
+}
+.map-status-bar .label { -fx-text-fill: #ffffff; }
+.map-status-bar .label.label-err { -fx-text-fill: #ff6b6b; }

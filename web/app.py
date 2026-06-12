@@ -199,16 +199,49 @@ def options_by_group():
 # --------------------------------------------------------------------------------------
 # Persisted config
 # --------------------------------------------------------------------------------------
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE) as fh:
-                return json.load(fh)
-        except (OSError, ValueError):
-            pass
+def _camel_to_env(key):
+    """worldOutputDir -> MWD_WORLD_OUTPUT_DIR ; server -> MWD_SERVER."""
+    out = []
+    for ch in key:
+        if ch.isupper():
+            out.append("_")
+        out.append(ch.upper())
+    return "MWD_" + "".join(out)
+
+
+def _env_overrides():
+    """Per-option overrides supplied via environment (so docker-compose can carry the full config).
+
+    Each option <key> is settable as MWD_<UPPER_SNAKE_KEY>, e.g. server -> MWD_SERVER,
+    extendedRenderDistance -> MWD_EXTENDED_RENDER_DISTANCE. These WIN over the saved console config so
+    a value baked into compose is the single source of truth for a headless deployment.
+    """
+    overrides = {}
+    for _g, key, _f, typ, _default, _l, _h in OPTIONS:
+        env_name = _camel_to_env(key)
+        if env_name in os.environ:
+            raw = os.environ[env_name]
+            overrides[key] = (raw.strip().lower() in BOOL_TRUE) if typ == "bool" else raw.strip()
+    return overrides
+
+
+def _defaults():
     cfg = {}
     for _g, key, _f, typ, default, _l, _h in OPTIONS:
         cfg[key] = bool(default) if typ == "bool" else ("" if default is None else str(default))
+    return cfg
+
+
+def load_config():
+    cfg = _defaults()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE) as fh:
+                cfg.update(json.load(fh))
+        except (OSError, ValueError):
+            pass
+    # environment overrides (from docker-compose) are authoritative for the keys they set
+    cfg.update(_env_overrides())
     return cfg
 
 
@@ -945,9 +978,65 @@ def healthz():
     return jsonify({"ok": True, "running": downloader.is_running()})
 
 
+# --------------------------------------------------------------------------------------
+# Headless bootstrap from environment (so `docker compose up` can run fully unattended)
+# --------------------------------------------------------------------------------------
+def _seed_account_from_env():
+    """Optionally seed the Minecraft account from env, unless one is already signed in.
+
+    MWD_OFFLINE_USERNAME       offline-mode username (cracked servers; no token)
+    MWD_MC_TOKEN + MWD_MC_USERNAME   a pre-obtained Minecraft access token (manual method)
+
+    A Microsoft account cannot be seeded non-interactively (it needs the device-code approval in the
+    console), but once signed in the token persists in /data/auth.json and survives restarts.
+    """
+    if auth_store.public_status().get("authenticated"):
+        return
+    token = os.environ.get("MWD_MC_TOKEN", "").strip()
+    if token:
+        try:
+            profile = auth.profile_from_token(token)
+            auth_store.set({"method": "manual", "username": profile.get("username"),
+                            "uuid": profile.get("uuid"), "mc_token": token})
+            print("[bootstrap] seeded Minecraft account from MWD_MC_TOKEN (%s)." % profile.get("username"), flush=True)
+            return
+        except Exception as exc:  # noqa: BLE001
+            print("[bootstrap] MWD_MC_TOKEN rejected: %s" % exc, flush=True)
+    offline = os.environ.get("MWD_OFFLINE_USERNAME", "").strip()
+    if offline:
+        auth_store.set({"method": "offline", "username": offline})
+        print("[bootstrap] seeded offline account '%s' from MWD_OFFLINE_USERNAME." % offline, flush=True)
+
+
+def _maybe_autostart():
+    """Start the downloader on boot when MWD_AUTOSTART is set and everything needed is present."""
+    if os.environ.get("MWD_AUTOSTART", "").strip().lower() not in BOOL_TRUE:
+        return
+    _seed_account_from_env()
+    cfg = load_config()
+    if not (cfg.get("server") or "").strip():
+        print("[autostart] MWD_AUTOSTART is set but no server is configured (set MWD_SERVER). Skipping.", flush=True)
+        return
+    try:
+        creds = auth_store.credentials_for_launch()
+    except Exception as exc:  # noqa: BLE001
+        print("[autostart] account error: %s" % exc, flush=True)
+        return
+    if not creds.get("username") and not creds.get("mc_token"):
+        print("[autostart] waiting for a Minecraft sign-in before starting (open the console and sign in "
+              "with Microsoft; the session then persists and autostart works on the next restart).", flush=True)
+        return
+    ok, msg = downloader.start(cfg, creds)
+    print("[autostart] %s" % msg, flush=True)
+
+
 if __name__ == "__main__":
     print("Minecraft World Downloader web manager on :%d (console login %s)" % (
         WEB_PORT, "enabled" if LOGIN_ENABLED else "disabled"), flush=True)
+    try:
+        _maybe_autostart()
+    except Exception as exc:  # noqa: BLE001 - never let bootstrap crash the web server
+        print("[autostart] bootstrap error: %s" % exc, flush=True)
     try:
         from waitress import serve
         serve(app, host="0.0.0.0", port=WEB_PORT, threads=8)

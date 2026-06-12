@@ -63,6 +63,16 @@ Implemented in `desktop/MainWindow.xaml` (controls + brush resources) and `deskt
 
 The desktop palettes mirror the web ones (e.g. light `#F4F6FB`/`#1A9E5B`, high-contrast `#000000`/`#FFFFFF`/`#00E676`), though the dark base differs slightly (`#0F1419` desktop vs `#0d1117` web).
 
+### Jar GUI (JavaFX)
+
+The JavaFX GUI supports the same three themes: **dark** (base, `ui/dark.css`, referenced by the FXML),
+**light** (`ui/light.css`), and **high contrast** (`ui/contrast.css`). Light/contrast are *override*
+stylesheets — `GuiManager.applyTheme` appends the selected override to the scene **root node's**
+stylesheet list after `dark.css` (the root, not the Scene: in JavaFX a parent node's stylesheets outrank
+the Scene's, so a scene-level override would silently lose). Select with `--gui-theme dark|light|contrast`
+or the **Theme** picker on the settings window's Extras tab, which saves to `config.json` and calls
+`GuiManager.reapplyTheme()` to restyle every open window live. Palettes match the web/desktop themes.
+
 ## Key files
 
 - `web/static/a11y.js` — the entire web accessibility/theme engine: state model, localStorage persistence, system-preference defaults, the floating FAB + dialog UI, presets, and `data-*` application on `<html>`.

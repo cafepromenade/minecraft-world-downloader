@@ -73,7 +73,9 @@ public class WorldManager {
     private final LevelData levelData;
     private final MapRegistry mapRegistry;
     private final Map<CoordinateDim2D, Queue<Runnable>> chunkLoadCallbacks = new ConcurrentHashMap<>();
-    private Map<CoordinateDim2D, Region> regions = new ConcurrentHashMap<>();
+    // volatile: reassigned on packet threads (dimension switch) and the FX thread (delete-all) while
+    // read continuously from the FX thread (map status bar) — the new reference must be visible.
+    private volatile Map<CoordinateDim2D, Region> regions = new ConcurrentHashMap<>();
 
     private EntityNames entityMap;
     private BlockColors blockColors;
@@ -677,7 +679,10 @@ public class WorldManager {
     }
 
     public void deleteAllExisting() {
-        regions = new HashMap<>();
+        // ConcurrentHashMap like everywhere else this field is assigned: packet/parser/save threads
+        // mutate it while the FX thread iterates it (status bar, stats) — a plain HashMap here caused
+        // ConcurrentModificationException on the FX thread after "Delete all downloaded chunks".
+        regions = new ConcurrentHashMap<>();
         chunkFactory.clear();
 
         try {

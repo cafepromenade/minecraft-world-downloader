@@ -8,7 +8,19 @@
     <Canvas fx:id="chunkCanvas" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
     <Label fx:id="helpLabel" layoutX="8.0" layoutY="6.0" styleClass="backdrop" />
     <Label fx:id="coordsLabel" layoutX="8.0" layoutY="26.0" styleClass="backdrop" />
-    <Label fx:id="statusLabel" layoutX="8.0" layoutY="26.0" styleClass="backdrop" AnchorPane.bottomAnchor="5.0" />
     <Canvas fx:id="entityCanvas" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
     <Button fx:id="playerLockButton" text="Follow player" AnchorPane.rightAnchor="6.0" AnchorPane.topAnchor="6.0" />
+    <!-- persistent status bar: dimension / player position / loaded chunks / zoom, plus the status
+         message (errors, pause hint) on the right. Sits on top of the canvases at the bottom edge.
+         mouseTransparent: it has no interactive children, and without it the bar's background would
+         swallow pan-drags / shift-click measuring / the right-click menu in the bottom strip. -->
+    <HBox fx:id="statusBar" alignment="CENTER_LEFT" spacing="16.0" styleClass="map-status-bar" mouseTransparent="true"
+          AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+        <Label fx:id="dimensionLabel" />
+        <Label fx:id="positionLabel" />
+        <Label fx:id="chunksLabel" />
+        <Label fx:id="zoomLabel" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label fx:id="statusLabel" />
+    </HBox>
 </AnchorPane>

@@ -51,6 +51,31 @@ beyond `localhost`, gate it behind a username/password by setting **both** `WEB_
 | `MS_CLIENT_ID` | public launcher id | Microsoft OAuth client id for account login |
 | `JAR_PATH` | `/app/world-downloader.jar` | Path to the downloader jar |
 | `DATA_DIR` | `/data` | Working directory for worlds/cache/settings |
+| `MWD_<OPTION>` | *(unset)* | Preconfigure any downloader option from compose (see below) |
+| `MWD_AUTOSTART` | `false` | Start downloading on boot (needs a server + signed-in account) |
+| `MWD_OFFLINE_USERNAME` | *(unset)* | Seed an offline-mode account (cracked servers; no token) |
+| `MWD_MC_TOKEN` | *(unset)* | Seed a pre-obtained Minecraft access token (username/UUID looked up automatically) |
+
+### Preconfigure the downloader from compose
+Every console option is settable as an environment variable named `MWD_` + the option key in
+`UPPER_SNAKE_CASE`. Examples:
+
+| Option (console) | Environment variable |
+| ---------------- | -------------------- |
+| Server address (`server`) | `MWD_SERVER` |
+| Output directory (`worldOutputDir`) | `MWD_WORLD_OUTPUT_DIR` |
+| Extended render distance (`extendedRenderDistance`) | `MWD_EXTENDED_RENDER_DISTANCE` |
+| Auto-open containers (`autoOpenContainers`) | `MWD_AUTO_OPEN_CONTAINERS` |
+
+Values set this way **override** the saved console config, so a value baked into compose is the single
+source of truth for a headless deployment. The desktop manager's **Generate docker-compose.yml** writes
+these for you from the Server / output / autostart fields.
+
+### Unattended start
+Set `MWD_AUTOSTART=true` and `MWD_SERVER=<host>` to start the download automatically on boot. For
+**online-mode** servers an account must be signed in: sign in **once** with Microsoft in the console —
+the session persists in `./data/auth.json`, so every restart afterwards autostarts silently. For
+**offline-mode** servers set `MWD_OFFLINE_USERNAME` and it runs fully unattended from the first boot.
 
 ## Changing ports
 If host port **25565** is already in use (e.g. you run another server), remap it in

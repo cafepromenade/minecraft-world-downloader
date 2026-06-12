@@ -286,6 +286,7 @@
                         <RowConstraints prefHeight="32.0" />
                         <RowConstraints prefHeight="32.0" />
                         <RowConstraints prefHeight="32.0" />
+                        <RowConstraints prefHeight="32.0" />
                     </rowConstraints>
                     <Label text="Chat auto-reply">
                         <tooltip>
@@ -345,6 +346,13 @@
                         </tooltip>
                     </Label>
                     <CheckBox fx:id="writeMapTiles" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+
+                    <Label text="Theme" GridPane.rowIndex="5">
+                        <tooltip>
+                            <QuickTooltip text="GUI colour theme. Applies immediately to all open windows." />
+                        </tooltip>
+                    </Label>
+                    <ComboBox fx:id="guiThemeBox" prefWidth="160.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                 </GridPane>
             </AnchorPane>
         </Tab>

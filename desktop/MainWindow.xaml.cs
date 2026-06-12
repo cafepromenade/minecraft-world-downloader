@@ -24,6 +24,9 @@ public partial class MainWindow : Window
         FolderBox.Text = _settings.DataFolder;
         WebPortBox.Text = _settings.WebPort.ToString();
         ProxyPortBox.Text = _settings.ProxyPort.ToString();
+        ServerBox.Text = _settings.Server;
+        OutputDirBox.Text = _settings.OutputDir;
+        AutoStartCheck.IsChecked = _settings.AutoStart;
         ImageBox.Text = _settings.Image;
         LoginCheck.IsChecked = _settings.RequireLogin;
         UserBox.Text = _settings.Username;
@@ -63,6 +66,9 @@ public partial class MainWindow : Window
         _settings.DataFolder = FolderBox.Text.Trim();
         _settings.WebPort = ParsePort(WebPortBox.Text, 8080);
         _settings.ProxyPort = ParsePort(ProxyPortBox.Text, 25565);
+        _settings.Server = ServerBox.Text.Trim();
+        _settings.OutputDir = string.IsNullOrWhiteSpace(OutputDirBox.Text) ? "world" : OutputDirBox.Text.Trim();
+        _settings.AutoStart = AutoStartCheck.IsChecked == true;
         if (!string.IsNullOrWhiteSpace(ImageBox.Text)) _settings.Image = ImageBox.Text.Trim();
         _settings.RequireLogin = LoginCheck.IsChecked == true;
         _settings.Username = UserBox.Text.Trim();

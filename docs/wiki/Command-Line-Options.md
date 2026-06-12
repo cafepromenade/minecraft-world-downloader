@@ -14,6 +14,8 @@ java -jar world-downloader.jar --no-gui -s mc.example.com -o my_world -r 10
 | `--local-port` | `-l` | `25565` | Port the downloader's proxy listens on. Connect Minecraft here. |
 | `--username` | `-u` | — | Your Minecraft username. |
 | `--token` | `-t` | — | Minecraft access token (see [Authentication](Authentication)). |
+| `--microsoft-login` | | off | Sign in with Microsoft via the **headless device-code flow** (prints a one-time code to approve on another device). No browser or inbound port needed — ideal for Docker/headless. The session is cached so later launches are silent. |
+| `--ms-auth-cache` | | `cache/ms-auth.json` | Path to the Microsoft device-code session cache (relative to the working dir, i.e. the mounted `/data` volume in Docker). |
 | `--disable-srv-lookup` | | off | Disable resolving the true address via DNS SRV records. |
 
 ## World output
@@ -74,6 +76,7 @@ When an incoming chat message's trigger-coloured text matches, send that message
 | Flag | Alias | Description |
 | ---- | ----- | ----------- |
 | `--no-gui` | | Run headless (no GUI). Requires `--server`. |
+| `--gui-theme` | `dark` | JavaFX GUI theme: `dark`, `light`, or `contrast` (high contrast). Also switchable live from the settings GUI (Extras tab). |
 | `--force-console` | | Never redirect console output to the GUI. |
 | `--enable-voice-proxy` | | Proxy Simple Voice Chat / PlasmoVoice UDP through the downloader. |
 | `--disable-messages` | | Disable various info messages (e.g. chest saving). |

@@ -28,6 +28,7 @@ import proxy.PacketInjector;
 import proxy.auth.AuthDetails;
 import proxy.auth.AuthenticationMethod;
 import proxy.auth.MicrosoftAuthHandler;
+import proxy.auth.MicrosoftDeviceAuth;
 import util.LocalDateTimeAdapter;
 import util.PathUtils;
 
@@ -191,6 +192,9 @@ public class Config {
         if (hasAccessToken) {
             this.manualAuth = AuthDetails.fromAccessToken(accessToken);
             this.authMethod = AuthenticationMethod.MANUAL;
+        } else if (microsoftLogin) {
+            // headless Microsoft device-code sign-in (no browser / inbound port needed)
+            performMicrosoftDeviceLogin();
         }
 
         // round to regions
@@ -216,6 +220,40 @@ public class Config {
         }
 
         new ConnectionManager().startProxy();
+    }
+
+    /**
+     * Headless Microsoft sign-in via the device-code flow. Reuses a cached session when possible;
+     * otherwise prints a one-time code for the user to approve on another device. On success the
+     * resulting token is used through the MANUAL path (no browser or inbound port required).
+     */
+    private void performMicrosoftDeviceLogin() {
+        try {
+            Path cache = (msAuthCachePath == null || msAuthCachePath.isBlank())
+                ? PathUtils.toPath("cache", "ms-auth.json")
+                : Paths.get(msAuthCachePath);
+
+            MicrosoftDeviceAuth deviceAuth = new MicrosoftDeviceAuth(cache);
+            AuthDetails details = deviceAuth.authenticate(info -> {
+                // Machine-readable marker (mirrors the bot's MSA_CODE line) so a managing console can surface it.
+                System.out.println("MSA_CODE {\"code\":\"" + info.userCode + "\",\"url\":\"" + info.verificationUri + "\"}");
+                System.out.println();
+                System.out.println("===== MICROSOFT SIGN-IN REQUIRED =====");
+                System.out.println("  1. Open:  " + info.verificationUri);
+                System.out.println("  2. Enter code:  " + info.userCode);
+                System.out.println("  3. Sign in with the Microsoft account that owns Minecraft: Java Edition.");
+                System.out.println("======================================");
+                System.out.println();
+                GuiManager.setStatusMessage("Microsoft sign-in: open " + info.verificationUri
+                    + " and enter " + info.userCode);
+            });
+
+            this.manualAuth = details;
+            this.authMethod = AuthenticationMethod.MANUAL;
+            System.out.println("[ms-auth] Signed in as " + details.getUsername() + ".");
+        } catch (Exception ex) {
+            System.err.println("[ms-auth] Microsoft sign-in failed: " + ex.getMessage());
+        }
     }
 
     private void writeSettings() {
@@ -374,6 +412,17 @@ public class Config {
     @Option(name = "--username", aliases = "-u",
             usage = "Your Minecraft username.")
     public transient String username;
+
+    @Option(name = "--microsoft-login",
+            usage = "Authenticate with Microsoft using the headless device-code flow (prints a one-time "
+                + "code to approve on another device). Ideal for Docker/headless. The session is cached "
+                + "(see --ms-auth-cache) so later launches are silent.")
+    public boolean microsoftLogin = false;
+
+    @Option(name = "--ms-auth-cache",
+            usage = "Path to the Microsoft device-code session cache (default: cache/ms-auth.json under "
+                + "the working directory, which is the mounted /data volume in Docker).")
+    public String msAuthCachePath = "";
 
     @Option(name = "--local-port", aliases = "-l",
             usage = "The port on which the world downloader's server will run.")
@@ -548,6 +597,10 @@ public class Config {
     @Option(name = "--dev-mode",
             usage = "Enable developer mode")
     private transient boolean devMode = false;
+
+    @Option(name = "--gui-theme",
+            usage = "JavaFX GUI theme: dark (default), light, or contrast (high contrast).")
+    public String guiTheme = "dark";
 
     @Option(name = "--force-console",
             usage = "Never redirect console output to GUI")

@@ -9,6 +9,15 @@ public class Settings
     public string DataFolder { get; set; } = "";
     public int WebPort { get; set; } = 8080;
     public int ProxyPort { get; set; } = 25565;
+
+    /// <summary>Remote Minecraft server to download from (hostname/IP, no port). Baked into the
+    /// generated compose as MWD_SERVER so the container is preconfigured.</summary>
+    public string Server { get; set; } = "";
+    /// <summary>World output directory (relative to /data). Baked in as MWD_WORLD_OUTPUT_DIR.</summary>
+    public string OutputDir { get; set; } = "world";
+    /// <summary>Start downloading automatically when the container boots (MWD_AUTOSTART). Needs an
+    /// account already signed in (it persists in /data) — Microsoft sign-in itself stays interactive.</summary>
+    public bool AutoStart { get; set; } = false;
     public string Image { get; set; } = "ghcr.io/cafepromenade/minecraft-world-downloader-web:latest";
     public string ContainerName { get; set; } = "minecraft-world-downloader";
     public bool RequireLogin { get; set; } = false;
@@ -112,6 +121,13 @@ public class Settings
             sb.AppendLine($"      WEB_USERNAME: \"{Username}\"");
             sb.AppendLine($"      WEB_PASSWORD: \"{Password}\"");
         }
+        // Downloader config baked in so the container is preconfigured (web/app.py reads MWD_* env vars).
+        if (!string.IsNullOrWhiteSpace(Server))
+            sb.AppendLine($"      MWD_SERVER: \"{Server.Trim()}\"            # remote server to download from");
+        if (!string.IsNullOrWhiteSpace(OutputDir) && OutputDir.Trim() != "world")
+            sb.AppendLine($"      MWD_WORLD_OUTPUT_DIR: \"{OutputDir.Trim()}\"   # world output dir (under /data)");
+        if (AutoStart)
+            sb.AppendLine("      MWD_AUTOSTART: \"true\"        # start downloading on boot (account must be signed in)");
         sb.AppendLine("    volumes:");
         sb.AppendLine($"      - \"{dataPath}:/data\"");
         return sb.ToString();

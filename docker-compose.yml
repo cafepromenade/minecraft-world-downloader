@@ -14,8 +14,26 @@ services:
       # WEB_USERNAME: "admin"
       # WEB_PASSWORD: "change-me"
       # SECRET_KEY: "set-a-long-random-string"   # only used when login is enabled
+      #
+      # ---- Preconfigure the downloader from compose (optional) --------------------------
+      # Every console option is settable here as MWD_<UPPER_SNAKE_KEY>; these WIN over the
+      # saved console config, so a value set here is authoritative for a headless deploy.
+      # MWD_SERVER: "mc.example.net"          # remote server to download from (required to autostart)
+      # MWD_WORLD_OUTPUT_DIR: "world"         # world folder under /data
+      # MWD_EXTENDED_RENDER_DISTANCE: "0"     # any option works: MWD_<UPPER_SNAKE_KEY>
+      #
+      # ---- Unattended start ------------------------------------------------------------
+      # MWD_AUTOSTART: "true"                 # start downloading on boot (needs an account signed in)
+      # An account is required for online-mode servers. Sign in ONCE in the console with
+      # Microsoft (device-code) — it persists in ./data/auth.json and autostart works on every
+      # restart after that. For offline/cracked servers you can seed an account from env:
+      # MWD_OFFLINE_USERNAME: "Steve"         # offline-mode username (no token)
+      # MWD_MC_TOKEN: "<minecraft-access-token>"   # or a pre-obtained token (username looked up for you)
+      #
+      # ---- Microsoft OAuth client (optional) -------------------------------------------
+      # MS_CLIENT_ID: "00000000402b5328"      # override the device-code client id if you use your own
     volumes:
-      - ./data:/data     # downloaded worlds, registry cache, and saved manager settings
+      - ./data:/data     # downloaded worlds, registry cache, account session (auth.json), settings
 
   # Optional: render the downloaded world into an interactive 3D web map with BlueMap.
   # Enable with:  docker compose --profile bluemap up -d bluemap

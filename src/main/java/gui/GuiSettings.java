@@ -99,6 +99,7 @@ public class GuiSettings {
     public CheckBox enableVoiceProxy;
     public CheckBox moddedBlockColorsBox;
     public CheckBox writeMapTiles;
+    public javafx.scene.control.ComboBox<String> guiThemeBox;
 
 
 
@@ -171,6 +172,14 @@ public class GuiSettings {
         enableVoiceProxy.setSelected(config.enableVoiceProxy);
         moddedBlockColorsBox.setSelected(!config.disableModdedBlockColors);
         writeMapTiles.setSelected(config.renderMap);
+        guiThemeBox.getItems().setAll("Dark", "Light", "High contrast");
+        guiThemeBox.getSelectionModel().select(switch (config.guiTheme == null ? "dark" : config.guiTheme.toLowerCase()) {
+            case "light" -> "Light";
+            case "contrast" -> "High contrast";
+            default -> "Dark";
+        });
+        // apply the theme immediately on selection (registered after select() so it doesn't fire now)
+        guiThemeBox.setOnAction(e -> save());
 
         // realms tab
         if (config.isStarted()) {
@@ -400,6 +409,18 @@ public class GuiSettings {
         config.enableVoiceProxy = enableVoiceProxy.isSelected();
         config.disableModdedBlockColors = !moddedBlockColorsBox.isSelected();
         config.renderMap = writeMapTiles.isSelected();
+        String selectedTheme = guiThemeBox.getSelectionModel().getSelectedItem();
+        if (selectedTheme != null) {
+            String newTheme = switch (selectedTheme) {
+                case "Light" -> "light";
+                case "High contrast" -> "contrast";
+                default -> "dark";
+            };
+            if (!newTheme.equals(config.guiTheme)) {
+                config.guiTheme = newTheme;
+                GuiManager.reapplyTheme();   // live-switch every open window
+            }
+        }
 
         Config.save();
     }

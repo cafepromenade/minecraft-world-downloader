@@ -236,6 +236,39 @@
                     </Grid>
 
                     <StackPanel Margin="0,14,0,0">
+                        <TextBlock Style="{StaticResource Lbl}" Text="Minecraft server address" />
+                        <TextBox x:Name="ServerBox" Style="{StaticResource Tb}"
+                                 AutomationProperties.Name="Minecraft server address to download from"
+                                 ToolTip="The remote server to download from (hostname or IP, without a port)." />
+                        <TextBlock Style="{StaticResource Desc}"
+                                   Text="Baked into the generated docker-compose.yml so the container is preconfigured. You can still change it later in the web console." />
+                    </StackPanel>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource Lbl}" Text="World output directory" />
+                            <TextBox x:Name="OutputDirBox" Style="{StaticResource Tb}" Text="world"
+                                     AutomationProperties.Name="World output directory under the data folder"
+                                     ToolTip="Folder under the data volume where the world is written." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <CheckBox x:Name="AutoStartCheck" Style="{StaticResource Toggle}" VerticalAlignment="Center"
+                                          AutomationProperties.Name="Start downloading automatically on boot"
+                                          ToolTip="Start downloading automatically when the container boots." />
+                                <TextBlock Text="Start download on boot" Foreground="{StaticResource Text}"
+                                           FontSize="13" VerticalAlignment="Center" Margin="12,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Desc}"
+                                       Text="Needs an account already signed in (it persists in the data folder)." />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Margin="0,14,0,0">
                         <TextBlock Style="{StaticResource Lbl}" Text="Docker image" />
                         <TextBox x:Name="ImageBox" Style="{StaticResource Tb}"
                                  ToolTip="The container image to run." />

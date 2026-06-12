@@ -51,9 +51,18 @@ public class GuiMap {
     public Button playerLockButton;
     public Label statusLabel;
 
+    // status bar
+    public Label dimensionLabel;
+    public Label positionLabel;
+    public Label chunksLabel;
+    public Label zoomLabel;
+
     private CoordinateDouble3D playerPos;
     private Coordinate2D cursorPos;
     private double playerRotation;
+    private Dimension currentDimension;
+    /** Last status-bar refresh (nanos); the bar updates at ~4 Hz, not every animation frame. */
+    private long lastStatusBarUpdate = 0;
 
     private double targetBlocksPerPixel;
     private double blocksPerPixel;
@@ -110,6 +119,12 @@ public class GuiMap {
                 computeBounds();
                 drawWorld();
                 drawEntities();
+
+                // refresh the status bar at ~4 Hz (every 250ms) instead of every frame
+                if (time - lastStatusBarUpdate > 250_000_000L) {
+                    lastStatusBarUpdate = time;
+                    updateStatusBar();
+                }
             }
         };
         animationTimer.start();
@@ -431,7 +446,41 @@ public class GuiMap {
     }
 
     public void setDimension(Dimension dimension) {
+        this.currentDimension = dimension;
         regionHandler.setDimension(dimension);
+    }
+
+    /**
+     * Refresh the bottom status bar (dimension, player position, loaded chunks, zoom). Runs on the FX
+     * thread (called from the animation timer), throttled to ~4 Hz by the caller.
+     */
+    private void updateStatusBar() {
+        if (dimensionLabel == null) {
+            return;
+        }
+        dimensionLabel.setText(currentDimension == null ? "" : shortDimensionName(currentDimension));
+        if (playerHasConnected && playerPos != null) {
+            positionLabel.setText(String.format("(%d, %d, %d)",
+                    (int) Math.floor(playerPos.getX()),
+                    (int) Math.floor(playerPos.getY()),
+                    (int) Math.floor(playerPos.getZ())));
+            chunksLabel.setText(WorldManager.getInstance().countActiveChunks() + " chunks loaded");
+        } else {
+            positionLabel.setText("");
+            chunksLabel.setText("");
+        }
+        zoomLabel.setText(blocksPerPixel >= 1
+                ? String.format("zoom 1:%.0f", blocksPerPixel)
+                : String.format("zoom %.0f:1", 1 / blocksPerPixel));
+    }
+
+    /** "minecraft:the_nether" -> "the nether"; leaves non-vanilla namespaces visible. */
+    private static String shortDimensionName(Dimension dimension) {
+        String name = dimension.getName();
+        if (name != null && name.startsWith("minecraft:")) {
+            name = name.substring("minecraft:".length());
+        }
+        return name == null ? "" : name.replace('_', ' ');
     }
 
     public void showErrorMessage() {
@@ -445,12 +494,15 @@ public class GuiMap {
     }
 
     private void updateStatusPrompt() {
+        // style via the theme's label classes (an inline white/red would be unreadable on light themes)
         if (this.showErrorPrompt) {
-            this.statusLabel.setText("An error has occured. 'Right click' -> 'Settings' to view.");
-            this.statusLabel.setStyle("-fx-text-fill: red;");
+            this.statusLabel.setText("An error has occurred. 'Right click' -> 'Settings' to view.");
+            if (!this.statusLabel.getStyleClass().contains("label-err")) {
+                this.statusLabel.getStyleClass().add("label-err");
+            }
         } else {
             this.statusLabel.setText(statusMessage);
-            this.statusLabel.setStyle("-fx-text-fill: white;");
+            this.statusLabel.getStyleClass().remove("label-err");
         }
     }
 

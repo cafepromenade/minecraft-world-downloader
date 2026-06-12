@@ -58,7 +58,11 @@ an auto-explore bot.
   fork's features (auto-open suite incl. trapped-chest/player-radius safety + log/state paths, chat
   auto-reply, extended-render pace, voice proxy, modded block colours, web-map tile writing) — so every
   feature is configurable from the jar GUI, web console, and desktop manager alike. Settings save on
-  tab switch and apply live (the sweep/reply/pace read `Config` continuously).
+  tab switch and apply live (the sweep/reply/pace read `Config` continuously). The map window has a
+  **status bar** (dimension, player position, loaded chunks, zoom), and the GUI supports **three
+  themes** — dark / light / high-contrast (`--gui-theme`, or the Extras-tab picker, which switches all
+  open windows live). Theme overrides live in `ui/light.css` / `ui/contrast.css` layered over
+  `ui/dark.css` on the scene ROOT (parent stylesheets outrank scene stylesheets in JavaFX).
 - **Disconnect diagnostics**: `[disconnect] …` logs for login kicks, in-game kicks, and socket closes;
   online-mode auth failures explain themselves; routine socket closes are logged calmly.
 

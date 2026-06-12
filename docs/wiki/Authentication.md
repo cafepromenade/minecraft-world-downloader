@@ -7,6 +7,18 @@ need only a username.
 ## With the jar / GUI
 - **GUI:** use the **Authentication** tab to sign in with Microsoft, or enter a username + access token.
 - **Automatic:** if the official launcher/game is running, the downloader can read the session from it.
+- **Headless Microsoft (CLI):** pass `--microsoft-login` to sign in with the **device-code** flow — no
+  browser or inbound port required, so it works over SSH / in a container. The jar prints a one-time
+  code and a URL; open the URL on any device, enter the code, and sign in. The Microsoft refresh token
+  is cached (`--ms-auth-cache`, default `cache/ms-auth.json`) so subsequent launches are silent.
+
+```bash
+java -jar world-downloader.jar --no-gui -s server.example --microsoft-login
+# ===== MICROSOFT SIGN-IN REQUIRED =====
+#   1. Open:  https://www.microsoft.com/link
+#   2. Enter code:  ABCD-EFGH
+```
+
 - **Manual (CLI):** pass `--username` and `--token` (a Minecraft access token). See
   [Command-Line Options](Command-Line-Options).
 

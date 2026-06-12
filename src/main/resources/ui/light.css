@@ -1,0 +1,82 @@
+/* ============================================================================
+   World Downloader — light theme OVERRIDE.
+   Loaded AFTER dark.css (the base stylesheet referenced by the FXML), so it only
+   needs to re-declare what changes. Palette matches the desktop manager / web
+   console light themes.
+   ============================================================================ */
+.root {
+    -fx-background: #f4f6fb;
+    -fx-background-color: #f4f6fb;
+    -fx-accent: #1a9e5b;
+    -fx-focus-color: #1a9e5b;
+    -fx-faint-focus-color: #1a9e5b33;
+    -fx-text-base-color: #16202e;
+}
+
+.label { -fx-text-fill: #16202e; }
+
+.tab-header-background { -fx-background-color: #eef2f8; }
+.tab:hover { -fx-background-color: #e3e9f2; }
+.tab .tab-label { -fx-text-fill: #51607a; }
+.tab:selected { -fx-border-color: #1a9e5b; }
+.tab:selected .tab-label { -fx-text-fill: #16202e; }
+
+.text-input {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #c7d0de;
+    -fx-text-fill: #16202e;
+    -fx-prompt-text-fill: #8a97ab;
+    -fx-highlight-fill: #1a9e5b55;
+}
+.text-input:focused { -fx-border-color: #1a9e5b; }
+.text-field:is-default { -fx-text-fill: #51607a; }
+.field-nonempty:empty { -fx-border-color: #c4322d; -fx-prompt-text-fill: #b08585; }
+.backdrop .text { -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.7), 2, 1, 0.0, 0.0); }
+
+.button, .titled-pane > .title {
+    -fx-background-color: linear-gradient(to bottom, #1fb86b, #1a9e5b);
+    -fx-text-fill: #ffffff;
+}
+.button:hover { -fx-background-color: linear-gradient(to bottom, #28c577, #1fb86b); }
+.button:pressed { -fx-background-color: linear-gradient(to bottom, #178f52, #137c47); }
+
+.check-box { -fx-text-fill: #16202e; }
+.check-box .box { -fx-background-color: #ffffff; -fx-border-color: #c7d0de; }
+.check-box:hover .box { -fx-border-color: #1a9e5b; }
+.check-box:selected .box { -fx-background-color: #1a9e5b; -fx-border-color: #1a9e5b; }
+.check-box:selected .mark { -fx-background-color: #ffffff; }
+
+.titled-pane { -fx-text-fill: #ffffff; }
+.titled-pane > .content { -fx-background-color: #ffffff; -fx-border-color: #c7d0de; }
+
+.label-valid { -fx-text-fill: #1a9e5b; }
+.label-warn  { -fx-text-fill: #9a6a00; }
+.label-err   { -fx-text-fill: #c4322d; }
+
+.slider > .axis { -fx-tick-label-fill: #51607a; }
+.slider > .track { -fx-background-color: #c7d0de; }
+.slider > .thumb { -fx-background-color: #1a9e5b; }
+.slider:focused > .thumb { -fx-effect: dropshadow(gaussian, #1a9e5b88, 8, 0, 0, 0); }
+
+.combo-box, .choice-box { -fx-background-color: #ffffff; -fx-border-color: #c7d0de; }
+.combo-box .list-cell, .choice-box .label { -fx-text-fill: #16202e; }
+.combo-box-popup .list-view { -fx-background-color: #ffffff; -fx-border-color: #c7d0de; }
+.combo-box-popup .list-cell:filled:hover { -fx-background-color: #eef2f8; }
+
+.scroll-bar .thumb { -fx-background-color: #c7d0de; }
+.scroll-bar .thumb:hover { -fx-background-color: #aebbce; }
+
+.tooltip {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #16202e;
+    -fx-border-color: #c7d0de;
+}
+
+.link-subtle { -fx-text-fill: #51607a; }
+
+.map-status-bar {
+    -fx-background-color: rgba(244, 246, 251, 0.88);
+    -fx-border-color: #c7d0de transparent transparent transparent;
+}
+.map-status-bar .label { -fx-text-fill: #51607a; }
+.map-status-bar .label.label-err { -fx-text-fill: #c4322d; }
