@@ -20,37 +20,11 @@ RUN mvn -q -B clean package -DskipTests
 #   RUN --mount=type=cache,target=/root/.m2 mvn -q -B dependency:go-offline
 #  — that reuses ~/.m2 across builds on the host, but keeps the deps OUT of the image layers.)
 
-# ---- Stage 2: runtime (JRE for the downloader + Python for the web console) ----
-FROM eclipse-temurin:21-jre
-
-ENV DEBIAN_FRONTEND=noninteractive
-# python3 = web console; nodejs = the mineflayer auto-explore bot (run from the console)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 python3-pip curl ca-certificates gnupg \
- && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
- && apt-get install -y --no-install-recommends nodejs \
- && rm -rf /var/lib/apt/lists/*
+# ---- Stage 2: runtime (uses pre-built base image with JRE + Python + Node deps) ----
+ARG BASE_IMAGE=ghcr.io/cafepromenade/minecraft-world-downloader-web-base:latest
+FROM ${BASE_IMAGE}
 
 WORKDIR /app
 COPY --from=builder /build/target/world-downloader.jar /app/world-downloader.jar
 COPY web /app/web
-RUN pip3 install --no-cache-dir --break-system-packages -r /app/web/requirements.txt
-
-# auto-explore bot (mineflayer); deps installed at build so the console can launch it
 COPY scraper /app/scraper
-RUN cd /app/scraper && npm install --no-audit --no-fund --omit=dev
-
-ENV JAR_PATH=/app/world-downloader.jar \
-    DATA_DIR=/data \
-    WEB_PORT=8080
-
-RUN mkdir -p /data
-VOLUME ["/data"]
-
-# 8080 = web console, 25565 = the Minecraft proxy clients connect to
-EXPOSE 8080 25565
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/healthz').status==200 else 1)" || exit 1
-
-ENTRYPOINT ["python3", "/app/web/app.py"]

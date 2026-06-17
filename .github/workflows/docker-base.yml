@@ -1,23 +1,13 @@
-name: Publish Docker image
-
-# Builds the web-console image and pushes it to GHCR so the desktop manager
-# (and `docker run`) can pull ghcr.io/<owner>/<repo>-web:latest.
-# NOTE: the package name carries a "-web" suffix. It is a fresh package created by THIS repo's
-# Actions, so the GITHUB_TOKEN auto-inherits write access (no manual package-permission grant needed,
-# unlike the legacy ...-downloader package whose ACL blocked GITHUB_TOKEN pushes).
+name: Publish Base Docker image
 
 on:
   push:
     branches: [ main, master ]
-    tags: [ 'v*' ]
     paths:
-      - 'src/**'
-      - 'web/**'
-      - 'scraper/**'
-      - 'pom.xml'
-      - 'Dockerfile'
       - 'Dockerfile.base'
-      - '.github/workflows/docker-image.yml'
+      - 'web/requirements.txt'
+      - 'scraper/package.json'
+      - 'scraper/package-lock.json'
       - '.github/workflows/docker-base.yml'
   workflow_dispatch:
 
@@ -35,12 +25,7 @@ jobs:
 
       - name: Lower-case image name
         id: img
-        # "-web" makes this a distinct, repo-owned package so GITHUB_TOKEN can publish it.
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-web" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve base image name
-        id: base
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-web-base:latest" >> "$GITHUB_OUTPUT"
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-web-base" >> "$GITHUB_OUTPUT"
 
       - uses: docker/login-action@v3
         with:
@@ -54,16 +39,14 @@ jobs:
           images: ${{ steps.img.outputs.name }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=tag
             type=sha,format=short
 
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.base
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            BASE_IMAGE=${{ steps.base.outputs.name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
